@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: FAQ
+    url: https://github.com/portalrr/portalrr/blob/main/FAQ.md
+    about: Check the FAQ before opening an issue — your question might already be answered.

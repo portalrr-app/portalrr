@@ -1,0 +1,60 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.active {
+  background: oklch(65% 0.15 145 / 0.15);
+  color: var(--success);
+}
+
+.active .dot {
+  background: var(--success);
+}
+
+.pending {
+  background: oklch(75% 0.15 80 / 0.15);
+  color: var(--warning);
+}
+
+.pending .dot {
+  background: var(--warning);
+}
+
+.used {
+  background: oklch(65% 0.015 250 / 0.15);
+  color: var(--text-secondary);
+}
+
+.used .dot {
+  background: var(--text-secondary);
+}
+
+.expired {
+  background: oklch(60% 0.2 25 / 0.15);
+  color: var(--error);
+}
+
+.expired .dot {
+  background: var(--error);
+}
+
+.cancelled {
+  background: oklch(45% 0.015 60 / 0.15);
+  color: var(--text-tertiary);
+}
+
+.cancelled .dot {
+  background: var(--text-tertiary);
+}

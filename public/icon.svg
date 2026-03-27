@@ -1,0 +1,10 @@
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer frame -->
+  <rect x="3" y="3" width="18" height="18" rx="4" style="fill: var(--icon-main, #A78BFA)"/>
+
+  <!-- Inner portal opening -->
+  <rect x="7" y="7" width="10" height="10" rx="2.5" style="fill: #0A0A0A"/>
+
+  <!-- Portal depth layer -->
+  <rect x="9.5" y="9.5" width="5" height="5" rx="1.5" style="fill: var(--icon-accent, #A78BFA)"/>
+</svg>

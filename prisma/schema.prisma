@@ -1,0 +1,340 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Server {
+  id            String   @id @default(cuid())
+  name          String
+  type          String   // 'plex' | 'jellyfin'
+  url           String
+  token         String?
+  apiKey         String?
+  adminUsername  String?
+  adminPassword  String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  invites       Invite[]
+  users         User[]
+  userServers   UserServer[]
+}
+
+model Invite {
+  id           String    @id @default(cuid())
+  code        String    @unique
+  serverId    String
+  server      Server    @relation(fields: [serverId], references: [id])
+  libraries   String    @default("[]")
+  expiresAt          DateTime?
+  accessUntil        DateTime?
+  accessDurationDays Int       @default(0)
+  autoRemove         Boolean   @default(false)
+  maxUses    Int       @default(1)
+  uses       Int       @default(0)
+  status     String    @default("active")
+  createdAt  DateTime  @default(now())
+  createdBy  String
+
+  // New fields
+  label          String?   // organizational tag
+  passphrase     String?   // bcrypt hash — if set, user must enter passphrase to redeem
+  notifyOnUse    Boolean   @default(false)
+  notifyOnExpiry Boolean   @default(false)
+
+  redeemedBy User[]
+
+  @@index([serverId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  username     String        @unique
+  passwordHash String
+  inviteId     String?
+  invite       Invite?       @relation(fields: [inviteId], references: [id])
+  serverId     String?
+  server       Server?       @relation(fields: [serverId], references: [id])
+  accessUntil  DateTime?
+  autoRemove   Boolean       @default(false)
+  enableLiveTv Boolean       @default(true)
+  allLibraries Boolean       @default(true)
+  libraries    String        @default("[]")
+  notificationState String   @default("{}")
+  createdAt    DateTime      @default(now())
+  sessions     UserSession[]
+
+  // New fields
+  disabled          Boolean  @default(false)
+  disabledAt        DateTime?
+  disabledReason    String?
+  notes             String?
+  labels            String   @default("[]")  // JSON array of strings
+  discordUsername   String?
+  discordId         String?   // Discord user ID (for DMs and role assignment)
+  telegramUsername  String?
+  telegramId        String?   // Telegram user ID (for DMs)
+  matrixId          String?
+
+  passwordResetTokens PasswordResetToken[]
+  userServers         UserServer[]
+
+  @@index([serverId])
+  @@index([inviteId])
+  @@index([accessUntil])
+  @@index([disabled])
+}
+
+// Join table: tracks which servers a user has accounts on
+model UserServer {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serverId     String
+  server       Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  remoteUserId String?  // Jellyfin/Plex user ID on that server
+  libraries    String   @default("[]")
+  disabled     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, serverId])
+  @@index([userId])
+  @@index([serverId])
+}
+
+model UserSession {
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  ipAddress String?
+  userAgent String?
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Settings {
+  id                 String  @id @default("main")
+  serverName         String  @default("Media Server")
+  accentColor        String  @default("#A78BFA")
+  themeVersion       Int     @default(1)
+  onboardingContent   String  @default("[]")
+  inviteProfiles     String  @default("[]")
+  preRegisterTitle   String  @default("Before You Start")
+  preRegisterSubtitle String @default("Review the server rules and expectations before creating your account.")
+  preRegisterChecklist String @default("[]")
+  requireInviteAcceptance Boolean @default(false)
+  captchaEnabled     Boolean @default(false)
+  customCss          String?
+  inviteExpiryDays   Int     @default(7)
+  maxInvites         Int     @default(100)
+  emailEnabled       Boolean @default(false)
+  smtpHost           String?
+  smtpPort           Int?
+  smtpUser           String?
+  smtpPass           String?
+  smtpFrom           String?
+  notifyBeforeExpiryDays Int @default(3)
+  notifyOnExpiry     Boolean @default(false)
+  expiryPolicy       String  @default("delete")
+  expiryDeleteAfterDays Int @default(7)
+  referralInvitesEnabled Boolean @default(false)
+  referralMaxUses    Int     @default(1)
+  referralExpiresInDays Int  @default(7)
+  referralAccessDurationDays Int @default(0)
+  referralAutoRemove Boolean @default(false)
+
+  // Appearance - Branding
+  appName            String  @default("Portalrr")
+  logoUrl            String?
+  logoMode           String  @default("icon")
+  subtitleText       String  @default("Enter your invite code to join the server")
+
+  // Appearance - Background
+  backgroundStyle    String  @default("gradient")
+  backgroundImageUrl String?
+  backgroundOverlay  Float   @default(0.7)
+
+  // Appearance - Card & Layout
+  cardStyle          String  @default("bordered")
+  borderRadius       String  @default("large")
+  cardWidth          String  @default("default")
+
+  // Appearance - Typography
+  fontFamily         String  @default("dm-sans")
+  fontDisplay        String  @default("same")
+
+  // Appearance - Controls
+  buttonStyle        String  @default("rounded")
+  inputStyle         String  @default("outlined")
+
+  // Appearance - Effects
+  enableAnimations   Boolean @default(true)
+  enableNoise        Boolean @default(true)
+  gradientDirection  String  @default("top")
+
+  // Appearance - Content
+  welcomeTitle       String  @default("Welcome")
+  registerTitle      String  @default("Create Your Account")
+  footerText         String?
+  hideAdminLink      Boolean @default(false)
+  buttonText         String  @default("Continue")
+  registerButtonText String  @default("Create Account")
+
+  // Security
+  mediaServerAuth    Boolean @default(false)
+
+  // Integrations
+  jellyseerrUrl      String?
+  jellyseerrApiKey   String?
+
+  // Onboarding page customization
+  onboardingTitle    String  @default("Welcome Aboard")
+  onboardingSubtitle String  @default("Your account has been created. Here's everything you need to know to get started.")
+  onboardingButtonText String @default("Start Watching")
+  onboardingButtonUrl  String @default("/")
+
+  // Password validation rules (customizable)
+  passwordMinLength       Int     @default(8)
+  passwordRequireUppercase Boolean @default(false)
+  passwordRequireNumber   Boolean @default(false)
+  passwordRequireSpecial  Boolean @default(false)
+
+  // Welcome email
+  welcomeEmailEnabled Boolean @default(false)
+
+  // Invite requests
+  inviteRequestsEnabled Boolean @default(false)
+  inviteRequestMessage  String  @default("Request access to join our media server")
+  inviteRequestServerId String? // which server to create invites for when approving
+
+  // Discord bot integration
+  discordBotToken       String?   // Encrypted bot token
+  discordGuildId        String?   // Server/guild ID
+  discordNotifyChannelId String?  // Channel for notifications
+  discordRoleId         String?   // Role to assign on registration
+  discordBotEnabled     Boolean   @default(false)
+
+  // Telegram bot integration
+  telegramBotToken      String?   // Encrypted bot token
+  telegramChatId        String?   // Group/channel chat ID for notifications
+  telegramBotEnabled    Boolean   @default(false)
+}
+
+model Admin {
+  id                  String         @id @default(cuid())
+  username            String         @unique
+  passwordHash        String
+  source              String         @default("local")
+  serverId            String?
+  totpSecret          String?
+  totpEnabled         Boolean        @default(false)
+  failedLoginAttempts Int            @default(0)
+  lockedUntil         DateTime?
+  createdAt           DateTime       @default(now())
+  sessions            AdminSession[]
+}
+
+model AdminSession {
+  id        String   @id
+  adminId   String
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  ipAddress String?
+  userAgent String?
+
+  @@index([adminId])
+  @@index([expiresAt])
+}
+
+// Persistent audit log (replaces stdout-only logging)
+model AuditLog {
+  id        String   @id @default(cuid())
+  event     String
+  actor     String?  // "admin:<username>" or "user:<username>" or "system"
+  target    String?  // what was affected
+  details   String   @default("{}")  // JSON
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([event])
+  @@index([actor])
+  @@index([createdAt])
+}
+
+// Self-service password reset tokens
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([expiresAt])
+}
+
+// Users can request an invite (admin approves/denies)
+model InviteRequest {
+  id         String    @id @default(cuid())
+  email      String
+  username   String
+  message    String?
+  status     String    @default("pending")  // pending, approved, denied
+  reviewedBy String?
+  reviewedAt DateTime?
+  reviewNote String?
+  inviteId   String?   // the invite created when approved
+  createdAt  DateTime  @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Configurable webhook endpoints
+model Webhook {
+  id        String   @id @default(cuid())
+  name      String
+  url       String
+  type      String   @default("generic")  // "discord", "generic"
+  events    String   @default("[]")       // JSON array of event names
+  enabled   Boolean  @default(true)
+  secret    String?  // HMAC secret for generic webhooks (encrypted)
+  template  String?  // custom JSON payload template with {{variables}}
+  createdAt DateTime @default(now())
+}
+
+// Customizable email templates with Markdown + variables
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  eventType String   @unique  // "welcome", "password_reset", "invite_expiry", "account_expiry", "account_disabled", "announcement"
+  subject   String
+  body      String   // Markdown with {{variable}} placeholders
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Admin announcements to users
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  body      String   // Markdown
+  sentBy    String   // admin username
+  sentTo    String   @default("all")   // "all" or JSON array of user IDs/labels
+  sentVia   String   @default("[]")    // JSON: ["email", "webhook"]
+  sentCount Int      @default(0)
+  createdAt DateTime @default(now())
+}

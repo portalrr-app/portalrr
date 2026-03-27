@@ -1,0 +1,17 @@
+{
+  "name": "Portalrr",
+  "short_name": "Portalrr",
+  "description": "Media server invite management",
+  "start_url": "/admin",
+  "display": "standalone",
+  "background_color": "#0C0B0E",
+  "theme_color": "#A78BFA",
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

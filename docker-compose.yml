@@ -1,0 +1,18 @@
+services:
+  portalrr:
+    build: .
+    container_name: portalrr
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - portalrr-data:/app/prisma/data
+    environment:
+      - DATABASE_URL=file:./data/portalrr.db
+      # REQUIRED: Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      # Set to 'true' if accessing over HTTP (no HTTPS/reverse proxy)
+      # - INSECURE_COOKIES=true
+
+volumes:
+  portalrr-data:

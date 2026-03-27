@@ -1,0 +1,219 @@
+.header {
+  margin-bottom: 28px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 560px;
+}
+
+.section {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  margin-bottom: 16px;
+}
+
+/* Profile */
+.profileCard {
+  display: flex;
+  flex-direction: column;
+}
+
+.profileRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.profileRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.profileRow:first-child {
+  padding-top: 0;
+}
+
+.profileLabel {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.profileValue {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* Password form */
+.passwordForm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* 2FA */
+.twoFactorCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.twoFactorIcon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-muted);
+  color: var(--accent);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.twoFactorIcon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.twoFactorInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.twoFactorStatus {
+  margin-bottom: 2px;
+}
+
+.statusEnabled {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--success);
+}
+
+.statusDisabled {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+.twoFactorDesc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.twoFactorAction {
+  flex-shrink: 0;
+}
+
+/* 2FA Setup Modal */
+.setupModal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.qrContainer {
+  padding: 16px;
+  background: white;
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+}
+
+.qrCode {
+  width: 180px;
+  height: 180px;
+  display: block;
+}
+
+.secretContainer {
+  margin-bottom: 20px;
+}
+
+.secretLabel {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.secretKey {
+  display: inline-block;
+  padding: 8px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: monospace;
+  font-size: 14px;
+  color: var(--text-primary);
+  letter-spacing: 0.1em;
+}
+
+.verifySection {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.verifyLabel {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.verifyInput {
+  width: 100%;
+  padding: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.3em;
+}
+
+.verifyInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.verifyInput::placeholder {
+  color: var(--text-tertiary);
+  letter-spacing: 0.15em;
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}

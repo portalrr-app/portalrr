@@ -1,0 +1,30 @@
+services:
+  portalrr:
+    build: .
+    container_name: portalrr
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - portalrr-data:/app/prisma/data
+    environment:
+      - DATABASE_URL=file:./data/portalrr.db
+      # Allow cookies over HTTP for LAN testing
+      - INSECURE_COOKIES=true
+    depends_on:
+      - jellyfin-test
+
+  jellyfin-test:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin-test
+    restart: unless-stopped
+    ports:
+      - "8097:8096"
+    volumes:
+      - jellyfin-config:/config
+      - jellyfin-cache:/cache
+
+volumes:
+  portalrr-data:
+  jellyfin-config:
+  jellyfin-cache:

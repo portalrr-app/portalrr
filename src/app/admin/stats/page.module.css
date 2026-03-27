@@ -1,0 +1,373 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.serverSelect {
+  padding: 10px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  min-width: 200px;
+}
+
+.serverSelect:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.loading {
+  text-align: center;
+  padding: 64px 24px;
+  color: var(--text-secondary);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.statCard {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  text-align: center;
+}
+
+.statValue {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.statLabel {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.section {
+  margin-bottom: 32px;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.table {
+  width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  transition: background var(--transition-fast);
+}
+
+.tableRow:last-child {
+  border-bottom: none;
+}
+
+.tableRow:hover {
+  background: var(--bg-hover);
+}
+
+.userName {
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.itemsWatched {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.totalHours {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.lastActivity {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.userTable .tableHeader,
+.userTable .tableRow {
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+
+.contentName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.itemType {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--bg-active);
+  color: var(--text-tertiary);
+}
+
+.playedAt {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Active Streams */
+.streamBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #22c55e20;
+  color: #22c55e;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 8px;
+}
+
+.streamsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.streamCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.streamUser {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.streamAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-muted);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.streamInfo {
+  min-width: 0;
+}
+
+.streamUsername {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.streamTitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.streamRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.streamMeta {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.streamDevice {
+  color: var(--text-tertiary);
+}
+
+.streamMethod {
+  padding: 1px 6px;
+  background: var(--bg-elevated);
+  border-radius: 4px;
+  color: var(--text-tertiary);
+}
+
+.streamProgress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.streamProgressBar {
+  width: 80px;
+  height: 3px;
+  background: var(--bg-elevated);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.streamProgressFill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 1s ease;
+}
+
+.streamState {
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.streamPlaying { color: #22c55e; }
+.streamPaused { color: #f59e0b; }
+
+.emptyState {
+  text-align: center;
+  padding: 32px 24px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.activityHint {
+  color: var(--text-tertiary);
+  font-size: 13px;
+  text-align: center;
+  padding: 16px;
+}
+
+.activityLink {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.activityLink:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .tableHeader {
+    display: none;
+  }
+
+  .tableRow {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .tableRow > * {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .tableRow > *::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+  }
+
+  .streamCard {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .streamRight {
+    align-items: flex-start;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .serverSelect {
+    width: 100%;
+    min-width: 0;
+  }
+}

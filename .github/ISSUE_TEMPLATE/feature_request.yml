@@ -1,0 +1,51 @@
+name: Feature Request
+description: Suggest a new feature or improvement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea for Portalrr? We'd love to hear it.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What would you like?
+      description: A clear description of the feature or improvement.
+      placeholder: "It would be great if Portalrr could..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Why do you want this? What's the use case?
+      placeholder: "I'm always doing X manually, and it would save time if..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Have you found any workarounds, or is there another tool that does this?
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of Portalrr does this relate to?
+      options:
+        - Invite system
+        - User management
+        - Appearance / Theming
+        - Onboarding
+        - Notifications (webhooks, email, bots)
+        - Integrations (Jellyfin, Plex, Jellyseerr)
+        - Admin panel
+        - Security
+        - API
+        - Other
+    validations:
+      required: true

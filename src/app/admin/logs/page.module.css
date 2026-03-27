@@ -1,0 +1,563 @@
+/* ------------------------------------------------------------------ */
+/*  Header                                                             */
+/* ------------------------------------------------------------------ */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.count {
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Section tabs                                                       */
+/* ------------------------------------------------------------------ */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  width: fit-content;
+}
+
+.tab {
+  padding: 8px 18px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.tab:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.tabActive {
+  background: var(--accent-muted);
+  color: var(--accent);
+}
+
+.tabActive:hover {
+  background: var(--accent-muted);
+  color: var(--accent);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Filters                                                            */
+/* ------------------------------------------------------------------ */
+
+.filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.select,
+.input {
+  padding: 8px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-primary);
+  transition: border-color var(--transition-fast);
+  font-family: var(--font-body);
+}
+
+.select:focus,
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.select {
+  min-width: 160px;
+  cursor: pointer;
+}
+
+.select option {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.input {
+  min-width: 140px;
+}
+
+.input[type="date"] {
+  min-width: 150px;
+  color-scheme: dark;
+}
+
+.purgeButton {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--error);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--error);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-left: auto;
+}
+
+.purgeButton:hover {
+  background: #EF444418;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Purge confirmation bar                                             */
+/* ------------------------------------------------------------------ */
+
+.purgeBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #EF44440D;
+  border: 1px solid #EF444430;
+  border-radius: var(--radius-md);
+}
+
+.purgeLabel {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.purgeInput {
+  width: 70px;
+  padding: 6px 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-primary);
+  text-align: center;
+  font-family: var(--font-body);
+}
+
+.purgeInput:focus {
+  outline: none;
+  border-color: var(--error);
+}
+
+.purgeConfirm {
+  padding: 6px 14px;
+  background: var(--error);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.purgeConfirm:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.purgeConfirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.purgeCancel {
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.purgeCancel:hover {
+  border-color: var(--border-active);
+  color: var(--text-primary);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Table (shared)                                                     */
+/* ------------------------------------------------------------------ */
+
+.table {
+  width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Audit log table                                                    */
+/* ------------------------------------------------------------------ */
+
+.auditHeader {
+  display: grid;
+  grid-template-columns: 90px 140px 1fr 1fr 80px 120px;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.auditRow {
+  display: grid;
+  grid-template-columns: 90px 140px 1fr 1fr 80px 120px;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  font-size: 13px;
+  transition: background var(--transition-fast);
+}
+
+.auditRow:hover {
+  background: var(--bg-hover);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Session table                                                      */
+/* ------------------------------------------------------------------ */
+
+.sessionHeader {
+  display: grid;
+  grid-template-columns: 1fr 80px 120px 1.5fr 100px 100px 90px;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sessionRow {
+  display: grid;
+  grid-template-columns: 1fr 80px 120px 1.5fr 100px 100px 90px;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  font-size: 13px;
+  transition: background var(--transition-fast);
+}
+
+.sessionRow:last-child {
+  border-bottom: none;
+}
+
+.sessionRow:hover {
+  background: var(--bg-hover);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Cell styles                                                        */
+/* ------------------------------------------------------------------ */
+
+.timeCell {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  cursor: default;
+}
+
+.mono {
+  font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+  font-size: 12px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uaCell {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.muted {
+  color: var(--text-tertiary);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Event badge                                                        */
+/* ------------------------------------------------------------------ */
+
+.eventBadge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Type badge (sessions)                                              */
+/* ------------------------------------------------------------------ */
+
+.typeBadge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.typeBadge[data-type="admin"] {
+  background: #A78BFA18;
+  color: #A78BFA;
+}
+
+.typeBadge[data-type="user"] {
+  background: #4FC3F718;
+  color: #4FC3F7;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Details toggle & pane                                              */
+/* ------------------------------------------------------------------ */
+
+.detailsToggle {
+  padding: 3px 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.detailsToggle:hover {
+  border-color: var(--border-active);
+  color: var(--text-primary);
+}
+
+.detailsPane {
+  padding: 0 16px 14px 16px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+}
+
+.detailsJson {
+  padding: 12px 14px;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Revoke button                                                      */
+/* ------------------------------------------------------------------ */
+
+.revokeButton {
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px solid var(--error);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--error);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.revokeButton:hover:not(:disabled) {
+  background: #EF444418;
+}
+
+.revokeButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Pagination                                                         */
+/* ------------------------------------------------------------------ */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.pageButton {
+  min-width: 36px;
+  padding: 8px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.pageButton:hover:not(:disabled) {
+  background: var(--bg-elevated);
+  border-color: var(--border-active);
+  color: var(--text-primary);
+}
+
+.pageButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pageActive {
+  background: var(--accent-muted);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.pageActive:hover:not(:disabled) {
+  background: var(--accent-muted);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ellipsis {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  padding: 0 4px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Empty state                                                        */
+/* ------------------------------------------------------------------ */
+
+.emptyState {
+  text-align: center;
+  padding: 64px 24px;
+  color: var(--text-secondary);
+}
+
+.emptyStateTitle {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.emptyStateText {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Responsive                                                         */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 1100px) {
+  .auditHeader,
+  .sessionHeader {
+    display: none;
+  }
+
+  .auditRow,
+  .sessionRow {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .auditRow > *,
+  .sessionRow > * {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .auditRow > *::before,
+  .sessionRow > *::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    flex-shrink: 0;
+    margin-right: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .filters {
+    flex-direction: column;
+  }
+
+  .select,
+  .input {
+    width: 100%;
+  }
+
+  .purgeButton {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .purgeBar {
+    flex-wrap: wrap;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+  }
+}
