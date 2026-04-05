@@ -7,6 +7,10 @@
     <Tag>latest</Tag>
     <TagDescription>Latest stable release</TagDescription>
   </Branch>
+  <Branch>
+    <Tag>develop</Tag>
+    <TagDescription>Development builds from main branch (may be unstable)</TagDescription>
+  </Branch>
   <Network>bridge</Network>
   <Privileged>false</Privileged>
   <Support>https://github.com/portalrr-app/portalrr/issues</Support>
