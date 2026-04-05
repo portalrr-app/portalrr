@@ -6,7 +6,7 @@ If you discover a security vulnerability in Portalrr, **please do not open a pub
 
 Instead, report it privately:
 
-1. Go to the [Security Advisories](https://github.com/portalrr/portalrr/security/advisories) page
+1. Go to the [Security Advisories](https://github.com/portalrr-app/portalrr/security/advisories) page
 2. Click **"Report a vulnerability"**
 3. Provide a description of the issue, steps to reproduce, and potential impact
 
