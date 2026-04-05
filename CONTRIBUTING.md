@@ -13,7 +13,7 @@ npx prisma migrate dev
 npm run dev
 ```
 
-The dev server runs at `http://localhost:3000` with hot reload.
+The dev server runs at `http://localhost:3939` with hot reload.
 
 ### Test Environment
 

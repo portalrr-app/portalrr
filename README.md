@@ -105,7 +105,7 @@ services:
     container_name: portalrr
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3939:3939"
     volumes:
       - portalrr-data:/app/prisma/data
     environment:
@@ -122,7 +122,7 @@ volumes:
 docker compose up -d
 ```
 
-Open `http://localhost:3000` — the setup wizard walks you through creating your admin account and connecting your first server.
+Open `http://localhost:3939` — the setup wizard walks you through creating your admin account and connecting your first server.
 
 ### Build from Source
 
@@ -145,7 +145,7 @@ npm start
 |----------|----------|---------|-------------|
 | `ENCRYPTION_KEY` | Yes | — | 64-char hex key for AES-256-GCM encryption. Generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
 | `DATABASE_URL` | No | `file:./data/portalrr.db` | SQLite database path |
-| `PORT` | No | `3000` | Server port |
+| `PORT` | No | `3939` | Server port |
 | `INSECURE_COOKIES` | No | `false` | Set to `true` for HTTP-only deployments (LAN without HTTPS) |
 
 Everything else — servers, appearance, integrations, email, bots — is configured through the admin dashboard. No config files to maintain.
@@ -177,7 +177,7 @@ npx prisma migrate dev
 npm run dev
 ```
 
-The dev server runs at `http://localhost:3000` with hot reload via Turbopack.
+The dev server runs at `http://localhost:3939` with hot reload via Turbopack.
 
 ```bash
 npm test          # Run tests

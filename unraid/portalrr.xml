@@ -13,11 +13,11 @@
   <Project>https://github.com/portalrr-app/portalrr</Project>
   <Overview>Self-hosted invite management portal for Plex and Jellyfin. Create invite links, manage users, and customize every detail of the experience. Features 30+ theme options, block-based onboarding editor, Discord/Telegram bots, webhooks, email templates, multi-admin with 2FA, and more.</Overview>
   <Category>MediaServer:Other Tools:Utilities</Category>
-  <WebUI>http://[IP]:[PORT:3000]</WebUI>
+  <WebUI>http://[IP]:[PORT:3939]</WebUI>
   <Icon>https://raw.githubusercontent.com/portalrr-app/portalrr/main/public/logo.png</Icon>
   <ExtraParams/>
   <Description>Self-hosted invite management portal for Plex and Jellyfin. A modern alternative to Wizarr and JFA-GO with 30+ theme options and full branding control.</Description>
-  <Config Name="WebUI" Target="3000" Default="3000" Mode="tcp" Description="Web interface port" Type="Port" Display="always" Required="true" Mask="false">3000</Config>
+  <Config Name="WebUI" Target="3939" Default="3939" Mode="tcp" Description="Web interface port" Type="Port" Display="always" Required="true" Mask="false">3939</Config>
   <Config Name="Data" Target="/app/prisma/data" Default="/mnt/user/appdata/portalrr" Mode="rw" Description="Database and app data" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/portalrr</Config>
   <Config Name="ENCRYPTION_KEY" Target="ENCRYPTION_KEY" Default="" Mode="" Description="64-char hex key for encrypting secrets. Generate with: node -e &quot;console.log(require('crypto').randomBytes(32).toString('hex'))&quot;" Type="Variable" Display="always" Required="true" Mask="true"/>
   <Config Name="INSECURE_COOKIES" Target="INSECURE_COOKIES" Default="true" Mode="" Description="Set to true if accessing over HTTP (no reverse proxy with HTTPS). Required for most Unraid setups." Type="Variable" Display="always" Required="false" Mask="false">true</Config>
