@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<Profile>
+  <Name>portalrr-app</Name>
+  <Description>Self-hosted invite management portal for Plex and Jellyfin media servers.</Description>
+  <Icon>https://raw.githubusercontent.com/portalrr-app/portalrr/main/public/logo.png</Icon>
+  <Support>https://github.com/portalrr-app/portalrr/issues</Support>
+  <Project>https://github.com/portalrr-app/portalrr</Project>
+</Profile>
