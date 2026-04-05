@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, design-refresh]
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -35,12 +35,29 @@ jobs:
         run: npm run build
 
   docker:
-    name: Docker Build
+    name: Build & Push Docker Image
     runs-on: ubuntu-latest
     needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build Docker image
-        run: docker build -t portalrr:ci .
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/portalrr-app/portalrr:latest
+            ghcr.io/portalrr-app/portalrr:${{ github.sha }}
