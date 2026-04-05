@@ -1,8 +1,6 @@
-<?xml version="1.0"?>
-<Profile>
-  <Name>portalrr-app</Name>
-  <Description>Self-hosted invite management portal for Plex and Jellyfin media servers.</Description>
+<?xml version="1.0" encoding="utf-8"?>
+<Maintainer>
   <Icon>https://raw.githubusercontent.com/portalrr-app/portalrr/main/public/logo.png</Icon>
-  <Support>https://github.com/portalrr-app/portalrr/issues</Support>
-  <Project>https://github.com/portalrr-app/portalrr</Project>
-</Profile>
+  <Profile>Self-hosted invite management portal for Plex and Jellyfin media servers. Portalrr lets you create invite links, manage users, and customize every detail of the experience with 30+ theme options, block-based onboarding, Discord/Telegram bots, webhooks, and more.</Profile>
+  <WebPage>https://github.com/portalrr-app/portalrr</WebPage>
+</Maintainer>
