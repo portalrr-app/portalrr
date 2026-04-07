@@ -9,6 +9,7 @@ RUN npm ci
 # Generate Prisma client
 FROM base AS prisma
 WORKDIR /app
+RUN apk add --no-cache openssl
 COPY --from=deps /app/node_modules ./node_modules
 COPY prisma ./prisma
 RUN npx prisma generate
@@ -16,6 +17,7 @@ RUN npx prisma generate
 # Build the application
 FROM base AS builder
 WORKDIR /app
+RUN apk add --no-cache openssl
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=prisma /app/node_modules/.prisma ./node_modules/.prisma
 COPY . .
