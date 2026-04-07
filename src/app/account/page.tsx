@@ -56,6 +56,7 @@ export default function AccountPage() {
   const [emailInput, setEmailInput] = useState('');
   const [emailError, setEmailError] = useState('');
   const [emailLoading, setEmailLoading] = useState(false);
+  const [referralError, setReferralError] = useState('');
   const [referrals, setReferrals] = useState<ReferralInvite[]>([]);
   const [referralLoading, setReferralLoading] = useState(false);
 
@@ -97,10 +98,10 @@ export default function AccountPage() {
       if (res.ok) {
         setReferrals((prev) => [data, ...prev]);
       } else {
-        setPasswordError(data.message || 'Failed to create referral invite');
+        setReferralError(data.message || 'Failed to create referral invite');
       }
     } catch {
-      setPasswordError('Failed to create referral invite');
+      setReferralError('Failed to create referral invite');
     } finally {
       setReferralLoading(false);
     }

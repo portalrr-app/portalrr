@@ -38,15 +38,15 @@ export default function OnboardingPage() {
   });
 
   useEffect(() => {
-    fetch('/api/settings')
+    fetch('/api/settings/public')
       .then((res) => res.json())
       .then((data) => {
-        if (data.onboardingTitle) setSettings({
+        if (data.onboardingTitle) setSettings((prev) => ({
           onboardingTitle: data.onboardingTitle,
-          onboardingSubtitle: data.onboardingSubtitle || settings.onboardingSubtitle,
-          onboardingButtonText: data.onboardingButtonText || settings.onboardingButtonText,
-          onboardingButtonUrl: data.onboardingButtonUrl || settings.onboardingButtonUrl,
-        });
+          onboardingSubtitle: data.onboardingSubtitle || prev.onboardingSubtitle,
+          onboardingButtonText: data.onboardingButtonText || prev.onboardingButtonText,
+          onboardingButtonUrl: data.onboardingButtonUrl || prev.onboardingButtonUrl,
+        }));
       })
       .catch(console.error);
 

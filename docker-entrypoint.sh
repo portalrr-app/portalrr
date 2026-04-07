@@ -7,8 +7,9 @@ if [ "$INSECURE_COOKIES" = "true" ] && [ "$NODE_ENV" = "production" ]; then
 fi
 
 if [ -z "$ENCRYPTION_KEY" ]; then
-  echo "WARNING: ENCRYPTION_KEY not set. Server tokens, API keys, and SMTP credentials will be stored unencrypted in the database."
+  echo "ERROR: ENCRYPTION_KEY is required. Server tokens, API keys, and SMTP credentials cannot be stored securely without it."
   echo "Generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
+  exit 1
 fi
 
 # Run database migrations

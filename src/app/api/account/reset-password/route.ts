@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      const resetLink = `${request.headers.get('origin') || ''}/forgot-password?token=${token}`;
+      const resetLink = `${request.nextUrl.origin}/forgot-password?token=${token}`;
 
       await sendTemplatedEmail(email, 'password_reset', {
         username: user.username,

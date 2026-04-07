@@ -409,6 +409,7 @@ export async function PATCH(request: NextRequest) {
 
           const updatedPolicy = {
             ...currentPolicy,
+            ...(disabled !== undefined && { IsDisabled: disabled }),
             ...(enableLiveTv !== undefined && { EnableLiveTvAccess: enableLiveTv }),
             ...(allLibraries !== undefined && {
               EnableAllFolders: allLibraries,

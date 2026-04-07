@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { authenticateAdmin, isAuthError } from '@/lib/auth/admin';
 import { updateSettingsSchema, validateBody } from '@/lib/validation';
 import { encrypt } from '@/lib/crypto';
-import { sanitizeCss } from '@/lib/sanitize';
+import { sanitizeCss, stripHtml } from '@/lib/sanitize';
 
 export async function GET(request: NextRequest) {
   try {
@@ -69,6 +69,16 @@ export async function PATCH(request: NextRequest) {
     let settings = await prisma.settings.findFirst();
 
     const data = parsed.data;
+
+    // Sanitize text fields to prevent stored XSS
+    const textFields = ['serverName', 'appName', 'welcomeTitle', 'registerTitle', 'subtitleText', 'footerText',
+      'preRegisterTitle', 'preRegisterSubtitle', 'inviteRequestMessage', 'onboardingTitle', 'onboardingSubtitle',
+      'buttonText', 'registerButtonText', 'onboardingButtonText'] as const;
+    for (const field of textFields) {
+      if (typeof data[field] === 'string') {
+        (data as Record<string, unknown>)[field] = stripHtml(data[field] as string);
+      }
+    }
 
     if (!settings) {
       settings = await prisma.settings.create({

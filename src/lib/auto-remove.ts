@@ -39,10 +39,28 @@ export async function runAutoRemoveIfDue() {
       const policy = settings?.expiryPolicy || 'delete';
 
       if (policy === 'disable') {
+        // Disable the user but don't delete them
+        if (!user.disabled) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { disabled: true },
+          });
+          dispatchWebhook('user.disabled', { username: user.username });
+          console.log(`Auto-remove: disabled expired user ${user.username}`);
+        }
         continue;
       }
 
       if (policy === 'disable_then_delete' && new Date() < deleteAfter) {
+        // Disable during grace period, delete after
+        if (!user.disabled) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { disabled: true },
+          });
+          dispatchWebhook('user.disabled', { username: user.username });
+          console.log(`Auto-remove: disabled expired user ${user.username} (grace period until ${deleteAfter.toISOString()})`);
+        }
         continue;
       }
 
@@ -108,7 +126,7 @@ async function sendExpiryNotifications(
     ) {
       const sent = await sendTemplatedEmail(user.email, 'account_expiry', {
         username: user.username,
-        expiresAt: user.accessUntil.toLocaleDateString(),
+        expiresAt: user.accessUntil.toISOString().split('T')[0],
       }).catch(() => false);
 
       if (sent) {
@@ -124,7 +142,7 @@ async function sendExpiryNotifications(
     ) {
       const sent = await sendTemplatedEmail(user.email, 'account_expiry', {
         username: user.username,
-        expiresAt: user.accessUntil.toLocaleDateString(),
+        expiresAt: user.accessUntil.toISOString().split('T')[0],
       }).catch(() => false);
 
       if (sent) {

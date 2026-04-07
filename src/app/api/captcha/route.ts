@@ -15,7 +15,7 @@ const OPERATION_WORDS: Record<string, string[]> = {
 };
 
 function signAnswer(answer: string, scope: string): string {
-  const secret = process.env.CAPTCHA_SECRET || process.env.NEXTAUTH_SECRET || 'portalrr-captcha-fallback-key';
+  const secret = process.env.CAPTCHA_SECRET || process.env.ENCRYPTION_KEY || 'portalrr-captcha-dev-only';
   return createHmac('sha256', secret).update(`${scope}:${answer}`).digest('hex');
 }
 

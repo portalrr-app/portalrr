@@ -309,6 +309,11 @@ export async function POST(request: NextRequest) {
           errors.push(`announcements: ${err instanceof Error ? err.message : 'unknown error'}`);
         }
       }
+
+      // If any section failed, roll back the entire transaction
+      if (errors.length > 0) {
+        throw new Error(`Import failed: ${errors.join('; ')}`);
+      }
     });
 
     await auditLog('backup.imported', {

@@ -184,12 +184,17 @@ export async function POST(request: NextRequest) {
           throw new Error('__INVITE_EXHAUSTED__');
         }
 
-        // Mark as 'used' if we've hit max uses
-        if (invite.maxUses > 0 && invite.uses + 1 >= invite.maxUses) {
-          await tx.invite.update({
-            where: { id: invite.id },
-            data: { status: 'used' },
-          });
+        // Mark as 'used' if we've hit max uses — re-read from DB to get the
+        // actual post-increment count (the stale `invite.uses` from before the
+        // transaction is unreliable under concurrency)
+        if (invite.maxUses > 0) {
+          const freshInvite = await tx.invite.findUnique({ where: { id: invite.id }, select: { uses: true } });
+          if (freshInvite && freshInvite.uses >= invite.maxUses) {
+            await tx.invite.update({
+              where: { id: invite.id },
+              data: { status: 'used' },
+            });
+          }
         }
 
         // Create user — if this throws (e.g. unique constraint), the entire
@@ -208,6 +213,22 @@ export async function POST(request: NextRequest) {
         });
       });
     } catch (txError: unknown) {
+      // Clean up orphaned media server account if the DB transaction failed
+      if (server && remoteUserId) {
+        try {
+          if (server.type === 'jellyfin' && server.apiKey) {
+            await fetch(`${server.url}/Users/${remoteUserId}`, {
+              method: 'DELETE',
+              headers: { 'X-MediaBrowser-Token': server.apiKey },
+              signal: AbortSignal.timeout(10000),
+            });
+            console.log(`Cleaned up orphaned Jellyfin user ${remoteUserId} after transaction failure`);
+          }
+        } catch (cleanupErr) {
+          console.error('Failed to clean up orphaned media server user:', cleanupErr);
+        }
+      }
+
       if (txError instanceof Error && txError.message === '__DUPLICATE__') {
         return NextResponse.json(
           { message: 'Registration failed. Please check your details and try again.' },
@@ -297,6 +318,7 @@ async function createPlexUser(plexUrl: string, token: string, username: string, 
   // First get the server's machine identifier
   const identityRes = await fetch(`${plexUrl}/identity`, {
     headers: { 'X-Plex-Token': token, 'Accept': 'application/json' },
+    signal: AbortSignal.timeout(15000),
   });
 
   if (!identityRes.ok) {
@@ -326,6 +348,7 @@ async function createPlexUser(plexUrl: string, token: string, username: string, 
       librarySectionIds: libraries.length > 0 ? libraries.map(Number).filter(Boolean) : [],
       settings: {},
     }),
+    signal: AbortSignal.timeout(15000),
   });
 
   if (!inviteRes.ok) {
@@ -345,6 +368,7 @@ async function createJellyfinUser(jellyfinUrl: string, apiKey: string, username:
       Name: username,
       Password: password,
     }),
+    signal: AbortSignal.timeout(15000),
   });
 
   if (!response.ok) {
@@ -366,6 +390,7 @@ async function createJellyfinUser(jellyfinUrl: string, apiKey: string, username:
         EnableAllFolders: false,
         EnabledFolders: libraries,
       }),
+      signal: AbortSignal.timeout(15000),
     });
     if (!policyRes.ok) {
       console.error(`Failed to set library policy for new Jellyfin user ${userId}: ${policyRes.status}`);

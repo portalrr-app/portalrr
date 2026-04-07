@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { checkRateLimit, getClientIp, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit';
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ code: string }> }
 ) {
   try {
+    const ip = getClientIp(_request);
+    const rl = checkRateLimit(`invite-verify:${ip}`, RATE_LIMITS.inviteVerify);
+    if (!rl.allowed) return rateLimitResponse(rl.retryAfterMs);
+
     const { code } = await params;
 
     const invite = await prisma.invite.findUnique({

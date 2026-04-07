@@ -287,6 +287,8 @@ export default function UsersPage() {
     const selectedUsers = users.filter((user) => selectedUserIds.includes(user.id));
     if (selectedUsers.length === 0) return;
 
+    if (!confirm(`Are you sure you want to delete ${selectedUsers.length} user(s)? This cannot be undone.`)) return;
+
     const res = await fetch('/api/users/bulk', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

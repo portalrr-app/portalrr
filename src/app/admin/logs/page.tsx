@@ -223,10 +223,9 @@ export default function LogsPage() {
   };
 
   const handleActorSearch = (value: string) => {
-    setActorSearch(value);
     if (actorDebounce.current) clearTimeout(actorDebounce.current);
     actorDebounce.current = setTimeout(() => {
-      /* fetchAudit will re-run via useEffect dependency on actorSearch */
+      setActorSearch(value);
     }, 300);
   };
 

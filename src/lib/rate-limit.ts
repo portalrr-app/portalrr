@@ -1,4 +1,5 @@
 import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 interface RateLimitEntry {
   timestamps: number[];
@@ -54,24 +55,30 @@ export const RATE_LIMITS = {
 } as const;
 
 export function getClientIp(request: NextRequest): string {
-  // Only trust x-forwarded-for if behind a reverse proxy.
-  // Take the rightmost IP (closest to the proxy) to prevent client spoofing.
-  // If the app is behind a single proxy, this is the real client IP.
-  const forwarded = request.headers.get('x-forwarded-for');
-  if (forwarded) {
-    const ips = forwarded.split(',').map(ip => ip.trim()).filter(Boolean);
-    // Use rightmost non-private IP, or fall back to first IP
-    return ips.length > 1 ? ips[ips.length - 1] : ips[0] || '127.0.0.1';
+  // Only trust x-forwarded-for if TRUSTED_PROXY_COUNT is configured.
+  // This prevents clients from spoofing their IP via the header.
+  const trustedProxies = parseInt(process.env.TRUSTED_PROXY_COUNT || '0', 10);
+  if (trustedProxies > 0) {
+    const forwarded = request.headers.get('x-forwarded-for');
+    if (forwarded) {
+      const ips = forwarded.split(',').map(ip => ip.trim()).filter(Boolean);
+      // The real client IP is at position (length - trustedProxies)
+      const idx = Math.max(0, ips.length - trustedProxies);
+      return ips[idx] || '127.0.0.1';
+    }
   }
   return request.headers.get('x-real-ip') || '127.0.0.1';
 }
 
 export function rateLimitResponse(retryAfterMs: number) {
-  return Response.json(
-    { message: 'Too many attempts. Please try again later.' },
+  return new NextResponse(
+    JSON.stringify({ message: 'Too many attempts. Please try again later.' }),
     {
       status: 429,
-      headers: { 'Retry-After': String(Math.ceil(retryAfterMs / 1000)) },
+      headers: {
+        'Content-Type': 'application/json',
+        'Retry-After': String(Math.ceil(retryAfterMs / 1000)),
+      },
     }
   );
 }

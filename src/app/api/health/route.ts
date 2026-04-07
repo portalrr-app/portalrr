@@ -9,14 +9,12 @@ export async function GET() {
     database: 'ok' | 'error';
     serverCount: number;
     serversHealthy: number;
-    servers: { id: string; name: string; type: string; healthy: boolean }[];
   } = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     database: 'ok',
     serverCount: 0,
     serversHealthy: 0,
-    servers: [],
   };
 
   try {
@@ -69,8 +67,8 @@ export async function GET() {
       }
     });
 
-    health.servers = await Promise.all(serverHealthPromises);
-    health.serversHealthy = health.servers.filter(s => s.healthy).length;
+    const serverResults = await Promise.all(serverHealthPromises);
+    health.serversHealthy = serverResults.filter(s => s.healthy).length;
 
     const hasServerIssues = health.serversHealthy < health.serverCount;
     if (health.status !== 'error' && hasServerIssues) {

@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { createHmac } from 'crypto';
+import { decrypt } from '@/lib/crypto';
 
 // All webhook event types
 export const WEBHOOK_EVENTS = [
@@ -130,7 +131,8 @@ export async function dispatchWebhook(event: WebhookEvent, data: Record<string, 
           }
 
           if (wh.secret && wh.type === 'generic') {
-            const signature = createHmac('sha256', wh.secret).update(body).digest('hex');
+            const decryptedSecret = decrypt(wh.secret);
+            const signature = createHmac('sha256', decryptedSecret).update(body).digest('hex');
             headers['X-Webhook-Signature'] = `sha256=${signature}`;
           }
 
