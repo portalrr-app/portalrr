@@ -62,8 +62,8 @@ export function getClientIp(request: NextRequest): string {
     const forwarded = request.headers.get('x-forwarded-for');
     if (forwarded) {
       const ips = forwarded.split(',').map(ip => ip.trim()).filter(Boolean);
-      // The real client IP is at position (length - trustedProxies)
-      const idx = Math.max(0, ips.length - trustedProxies);
+      // Each trusted proxy appends one IP. The client IP is just before the trusted proxies.
+      const idx = Math.max(0, ips.length - trustedProxies - 1);
       return ips[idx] || '127.0.0.1';
     }
   }

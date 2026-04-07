@@ -40,7 +40,8 @@ describe('GET /api/health', () => {
     expect(body.status).toBe('ok');
     expect(body.database).toBe('ok');
     expect(body.serverCount).toBe(0);
-    expect(body.servers).toEqual([]);
+    // servers array is no longer exposed (security fix)
+    expect(body.servers).toBeUndefined();
   });
 
   it('returns error when database is down', async () => {
@@ -71,7 +72,6 @@ describe('GET /api/health', () => {
     expect(body.status).toBe('degraded');
     expect(body.serverCount).toBe(1);
     expect(body.serversHealthy).toBe(0);
-    expect(body.servers[0].healthy).toBe(false);
 
     global.fetch = originalFetch;
   });
@@ -91,7 +91,6 @@ describe('GET /api/health', () => {
     expect(res.status).toBe(200);
     expect(body.status).toBe('ok');
     expect(body.serversHealthy).toBe(1);
-    expect(body.servers[0].healthy).toBe(true);
 
     global.fetch = originalFetch;
   });

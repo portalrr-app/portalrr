@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { checkRateLimit, RATE_LIMITS, getClientIp, rateLimitResponse } from '../rate-limit';
 
 describe('checkRateLimit', () => {
@@ -86,29 +86,56 @@ describe('checkRateLimit', () => {
 });
 
 describe('getClientIp', () => {
-  // getClientIp expects a NextRequest, so we create minimal mock headers
   const makeRequest = (headers: Record<string, string>) => ({
     headers: {
       get: (key: string) => headers[key.toLowerCase()] || null,
     },
   }) as unknown as import('next/server').NextRequest;
 
-  it('returns rightmost IP from x-forwarded-for with multiple IPs', () => {
-    const req = makeRequest({ 'x-forwarded-for': '192.168.1.1, 10.0.0.1, 203.0.113.50' });
+  const originalEnv = process.env.TRUSTED_PROXY_COUNT;
+  afterEach(() => {
+    if (originalEnv === undefined) {
+      delete process.env.TRUSTED_PROXY_COUNT;
+    } else {
+      process.env.TRUSTED_PROXY_COUNT = originalEnv;
+    }
+  });
+
+  it('ignores x-forwarded-for when TRUSTED_PROXY_COUNT is not set', () => {
+    delete process.env.TRUSTED_PROXY_COUNT;
+    const req = makeRequest({ 'x-forwarded-for': '1.2.3.4', 'x-real-ip': '5.5.5.5' });
+    // Should not trust x-forwarded-for, fall back to x-real-ip
+    expect(getClientIp(req)).toBe('5.5.5.5');
+  });
+
+  it('ignores x-forwarded-for when TRUSTED_PROXY_COUNT is 0', () => {
+    process.env.TRUSTED_PROXY_COUNT = '0';
+    const req = makeRequest({ 'x-forwarded-for': '1.2.3.4' });
+    expect(getClientIp(req)).toBe('127.0.0.1');
+  });
+
+  it('extracts correct client IP with TRUSTED_PROXY_COUNT=1', () => {
+    process.env.TRUSTED_PROXY_COUNT = '1';
+    // client -> proxy: "client_ip, proxy_ip" — we want client_ip (length - 1 = index 0)
+    const req = makeRequest({ 'x-forwarded-for': '203.0.113.50, 10.0.0.1' });
     expect(getClientIp(req)).toBe('203.0.113.50');
   });
 
-  it('returns single IP from x-forwarded-for', () => {
+  it('extracts correct client IP with TRUSTED_PROXY_COUNT=2', () => {
+    process.env.TRUSTED_PROXY_COUNT = '2';
+    // client -> proxy1 -> proxy2: "client, proxy1, proxy2"
+    const req = makeRequest({ 'x-forwarded-for': '203.0.113.50, 10.0.0.1, 10.0.0.2' });
+    expect(getClientIp(req)).toBe('203.0.113.50');
+  });
+
+  it('handles single IP with TRUSTED_PROXY_COUNT=1', () => {
+    process.env.TRUSTED_PROXY_COUNT = '1';
+    // Single IP means the proxy didn't append — use it as-is (index 0)
     const req = makeRequest({ 'x-forwarded-for': '203.0.113.50' });
     expect(getClientIp(req)).toBe('203.0.113.50');
   });
 
-  it('trims whitespace from forwarded IPs', () => {
-    const req = makeRequest({ 'x-forwarded-for': '  10.0.0.1 ,  8.8.8.8  ' });
-    expect(getClientIp(req)).toBe('8.8.8.8');
-  });
-
-  it('falls back to x-real-ip', () => {
+  it('falls back to x-real-ip when no forwarded header', () => {
     const req = makeRequest({ 'x-real-ip': '1.2.3.4' });
     expect(getClientIp(req)).toBe('1.2.3.4');
   });
@@ -118,14 +145,12 @@ describe('getClientIp', () => {
     expect(getClientIp(req)).toBe('127.0.0.1');
   });
 
-  it('prefers x-forwarded-for over x-real-ip', () => {
-    const req = makeRequest({ 'x-forwarded-for': '8.8.8.8', 'x-real-ip': '1.1.1.1' });
-    expect(getClientIp(req)).toBe('8.8.8.8');
-  });
-
-  it('handles empty x-forwarded-for and falls back', () => {
-    const req = makeRequest({ 'x-forwarded-for': '', 'x-real-ip': '5.5.5.5' });
-    expect(getClientIp(req)).toBe('5.5.5.5');
+  it('prevents spoofing without TRUSTED_PROXY_COUNT', () => {
+    delete process.env.TRUSTED_PROXY_COUNT;
+    // Attacker sends fake x-forwarded-for directly to the app
+    const req = makeRequest({ 'x-forwarded-for': 'fake-ip' });
+    // Should NOT trust it
+    expect(getClientIp(req)).toBe('127.0.0.1');
   });
 });
 

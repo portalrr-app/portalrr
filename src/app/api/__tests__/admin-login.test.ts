@@ -36,6 +36,9 @@ vi.mock('otplib', () => ({ verify: vi.fn() }));
 
 import { POST } from '@/app/api/admin/login/route';
 
+// Enable x-forwarded-for trust for tests
+process.env.TRUSTED_PROXY_COUNT = '1';
+
 // Each test gets a unique IP to avoid rate limit collisions
 let ipCounter = 0;
 function loginRequest(body: Record<string, unknown>) {

@@ -441,3 +441,75 @@ describe('accent color validation edge cases', () => {
     expect(updateSettingsSchema.safeParse({ accentColor: 'rgb(255,0,0)' }).success).toBe(false);
   });
 });
+
+describe('createServerSchema URL scheme validation', () => {
+  it('accepts http URL', () => {
+    expect(createServerSchema.safeParse({
+      name: 'Test', type: 'jellyfin', url: 'http://192.168.1.100:8096',
+    }).success).toBe(true);
+  });
+
+  it('accepts https URL', () => {
+    expect(createServerSchema.safeParse({
+      name: 'Test', type: 'plex', url: 'https://plex.example.com:32400',
+    }).success).toBe(true);
+  });
+
+  it('rejects javascript: URL', () => {
+    expect(createServerSchema.safeParse({
+      name: 'Test', type: 'jellyfin', url: 'javascript:alert(1)',
+    }).success).toBe(false);
+  });
+
+  it('rejects file:// URL', () => {
+    expect(createServerSchema.safeParse({
+      name: 'Test', type: 'jellyfin', url: 'file:///etc/passwd',
+    }).success).toBe(false);
+  });
+
+  it('rejects ftp:// URL', () => {
+    expect(createServerSchema.safeParse({
+      name: 'Test', type: 'jellyfin', url: 'ftp://server.local',
+    }).success).toBe(false);
+  });
+});
+
+describe('createWebhookSchema event validation', () => {
+  it('accepts valid event names', () => {
+    expect(createWebhookSchema.safeParse({
+      name: 'Hook', url: 'https://hooks.example.com/ep',
+      events: ['user.registered', 'invite.created'],
+    }).success).toBe(true);
+  });
+
+  it('accepts wildcard event', () => {
+    expect(createWebhookSchema.safeParse({
+      name: 'Hook', url: 'https://hooks.example.com/ep',
+      events: ['*'],
+    }).success).toBe(true);
+  });
+
+  it('rejects invalid event names', () => {
+    expect(createWebhookSchema.safeParse({
+      name: 'Hook', url: 'https://hooks.example.com/ep',
+      events: ['hacked.event'],
+    }).success).toBe(false);
+  });
+
+  it('rejects arbitrary strings as events', () => {
+    expect(createWebhookSchema.safeParse({
+      name: 'Hook', url: 'https://hooks.example.com/ep',
+      events: ['foo'],
+    }).success).toBe(false);
+  });
+});
+
+describe('updateSettingsSchema appName validation', () => {
+  it('rejects empty appName', () => {
+    expect(updateSettingsSchema.safeParse({ appName: '' }).success).toBe(false);
+  });
+
+  it('accepts valid appName', () => {
+    expect(updateSettingsSchema.safeParse({ appName: 'My Server' }).success).toBe(true);
+  });
+});
