@@ -32,7 +32,7 @@ SQLite. No separate database server needed — it's a single file stored in the 
 An `ENCRYPTION_KEY` is used to encrypt secrets (API keys, tokens) at rest. If you don't set one, it's auto-generated on first run and stored in the database directory. If you're migrating or backing up, keep this key — without it, encrypted values can't be decrypted.
 
 **Can I run it behind a reverse proxy?**
-Yes. Portalrr works behind Nginx, Caddy, Traefik, etc. Just proxy to port 3939. If you're using HTTPS (recommended), the session cookies are secure by default. If you need to run without HTTPS in development, set `INSECURE_COOKIES=true`.
+Yes. Portalrr works behind Nginx, Caddy, Traefik, etc. Just proxy to port 3939. Set `TRUSTED_PROXY_COUNT=1` so rate limiting uses the real client IP instead of the proxy's. If you're using HTTPS (recommended), the session cookies are secure by default. If you need to run without HTTPS in development, set `INSECURE_COOKIES=true`.
 
 **Can I connect multiple servers?**
 Yes. Add as many Plex and Jellyfin servers as you want. Each invite targets a specific server.

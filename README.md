@@ -147,6 +147,7 @@ npm start
 | `DATABASE_URL` | No | `file:./data/portalrr.db` | SQLite database path |
 | `PORT` | No | `3939` | Server port |
 | `INSECURE_COOKIES` | No | `false` | Set to `true` for HTTP-only deployments (LAN without HTTPS) |
+| `TRUSTED_PROXY_COUNT` | No | `0` | Set to `1` if behind a reverse proxy (Nginx, Traefik, Caddy) for correct rate limiting |
 
 Everything else — servers, appearance, integrations, email, bots — is configured through the admin dashboard. No config files to maintain.
 

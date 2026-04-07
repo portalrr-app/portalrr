@@ -13,6 +13,8 @@ services:
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       # Set to 'true' if accessing over HTTP (no HTTPS/reverse proxy)
       # - INSECURE_COOKIES=true
+      # Set to '1' if behind a reverse proxy (Nginx, Traefik, Caddy)
+      # - TRUSTED_PROXY_COUNT=1
 
 volumes:
   portalrr-data:
