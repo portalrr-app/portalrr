@@ -27,14 +27,22 @@ async function getMailer() {
 
 export async function sendEmail(to: string, subject: string, text: string) {
   const mailer = await getMailer();
-  if (!mailer) return false;
+  if (!mailer) {
+    console.warn(`Email not sent to ${to} (subject: "${subject}") — SMTP not configured`);
+    return false;
+  }
 
-  await mailer.transporter.sendMail({
-    from: mailer.settings.smtpFrom!,
-    to,
-    subject,
-    text,
-  });
-
-  return true;
+  try {
+    await mailer.transporter.sendMail({
+      from: mailer.settings.smtpFrom!,
+      to,
+      subject,
+      text,
+    });
+    console.log(`Email sent to ${to} (subject: "${subject}")`);
+    return true;
+  } catch (error) {
+    console.error(`Failed to send email to ${to} (subject: "${subject}"):`, error instanceof Error ? error.message : error);
+    return false;
+  }
 }

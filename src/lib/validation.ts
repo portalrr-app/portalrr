@@ -173,6 +173,7 @@ export const updateUserSchema = z.object({
   libraries: z.array(z.string().max(100)).max(100).optional(),
   source: z.string().optional(),
   serverId: z.string().optional(),
+  email: z.string().email().max(200).optional().nullable(),
   // New fields
   disabled: z.boolean().optional(),
   disabledReason: z.string().max(500).optional().nullable(),

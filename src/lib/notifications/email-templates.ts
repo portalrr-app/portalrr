@@ -5,46 +5,46 @@ import { sendEmail } from '@/lib/notifications/email';
 const DEFAULT_TEMPLATES: Record<string, { subject: string; body: string }> = {
   welcome: {
     subject: 'Welcome to {{appName}}!',
-    body: `Hi **{{username}}**,
+    body: `Hi {{username}},
 
-Your account has been created successfully. You now have access to **{{serverName}}**.
+Your account has been created successfully. You now have access to {{serverName}}.
 
-{{#if accessUntil}}Your access is valid until **{{accessUntil}}**.{{/if}}
+{{#if accessUntil}}Your access is valid until {{accessUntil}}.{{/if}}
 
 Enjoy!`,
   },
   password_reset: {
     subject: '{{appName}} - Password Reset',
-    body: `Hi **{{username}}**,
+    body: `Hi {{username}},
 
 A password reset was requested for your account. Use the link below to set a new password:
 
-**{{resetLink}}**
+{{resetLink}}
 
 This link expires in 30 minutes. If you didn't request this, you can safely ignore this email.`,
   },
   invite_expiry: {
     subject: '{{appName}} - Invite Expired',
-    body: `The invite code **{{code}}** for server **{{serverName}}** has expired.
+    body: `The invite code {{code}} for server {{serverName}} has expired.
 
 - Uses: {{uses}}/{{maxUses}}
 - Created by: {{createdBy}}`,
   },
   account_expiry: {
     subject: '{{appName}} - Your Access is Expiring Soon',
-    body: `Hi **{{username}}**,
+    body: `Hi {{username}},
 
-Your access to **{{serverName}}** will expire on **{{expiresAt}}**.
+Your access to {{serverName}} will expire on {{expiresAt}}.
 
 Contact your server admin if you'd like to renew your access.`,
   },
   account_disabled: {
     subject: '{{appName}} - Account Disabled',
-    body: `Hi **{{username}}**,
+    body: `Hi {{username}},
 
 Your account has been disabled.
 
-{{#if reason}}**Reason:** {{reason}}{{/if}}
+{{#if reason}}Reason: {{reason}}{{/if}}
 
 Contact your server admin for more information.`,
   },
@@ -54,9 +54,9 @@ Contact your server admin for more information.`,
   },
   server_access: {
     subject: '{{appName}} - You\'ve been added to {{addedServerName}}',
-    body: `Hi **{{username}}**,
+    body: `Hi {{username}},
 
-You've been granted access to **{{addedServerName}}** ({{serverType}}).
+You've been granted access to {{addedServerName}} ({{serverType}}).
 
 {{#if isJellyfin}}Log in with your existing username and password.{{/if}}
 {{#if isPlex}}Check your email for a Plex sharing invite, or look for the server in your Plex app.{{/if}}

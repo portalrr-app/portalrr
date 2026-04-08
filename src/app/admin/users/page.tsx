@@ -81,6 +81,7 @@ export default function UsersPage() {
   const [selectedLibraries, setSelectedLibraries] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [editNotes, setEditNotes] = useState('');
+  const [editEmail, setEditEmail] = useState('');
   const [editDiscordUsername, setEditDiscordUsername] = useState('');
   const [editTelegramUsername, setEditTelegramUsername] = useState('');
 
@@ -158,6 +159,7 @@ export default function UsersPage() {
     setEnableLiveTv(user.enableLiveTv ?? true);
     setAllLibraries(user.allLibraries ?? false);
     setSelectedLibraries(user.libraries || []);
+    setEditEmail(user.email || '');
     setEditNotes(user.notes || '');
     setEditDiscordUsername(user.discordUsername || '');
     setEditTelegramUsername(user.telegramUsername || '');
@@ -196,6 +198,7 @@ export default function UsersPage() {
           libraries: allLibraries ? [] : selectedLibraries,
           source: editingUser.source,
           serverId: editingUser.serverId,
+          email: editEmail || null,
           notes: editNotes || null,
           discordUsername: editDiscordUsername || null,
           telegramUsername: editTelegramUsername || null,
@@ -756,7 +759,7 @@ export default function UsersPage() {
                 </div>
                 <div className={styles.infoRow}>
                   <span className={styles.infoLabel}>Email</span>
-                  <span className={styles.infoValue}>{editingUser.email || '-'}</span>
+                  <span className={styles.infoValue}>{editEmail || '-'}</span>
                 </div>
                 <div className={styles.infoRow}>
                   <span className={styles.infoLabel}>Server</span>
@@ -771,8 +774,8 @@ export default function UsersPage() {
               </div>
 
               <div className={styles.section}>
-                <label className={styles.label}>Access Duration (Days)</label>
                 <Input
+                  label="Access Duration (Days)"
                   type="text"
                   inputMode="numeric"
                   value={accessInput}
@@ -834,7 +837,7 @@ export default function UsersPage() {
               </div>
 
               <div className={styles.section} style={{ marginTop: 16 }}>
-                <label className={styles.label}>Notes</label>
+                <span className={styles.label}>Notes</span>
                 <textarea
                   className={styles.serverSelect}
                   value={editNotes}
@@ -846,8 +849,15 @@ export default function UsersPage() {
               </div>
 
               <div className={styles.section}>
-                <label className={styles.label} style={{ marginBottom: 8 }}>Contact Info</label>
+                <span className={styles.label} style={{ marginBottom: 8 }}>Contact Info</span>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <Input
+                    label="Email"
+                    type="email"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    placeholder="user@example.com"
+                  />
                   <Input
                     label="Discord Username"
                     type="text"

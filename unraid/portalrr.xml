@@ -26,4 +26,5 @@
   <Config Name="ENCRYPTION_KEY" Target="ENCRYPTION_KEY" Default="" Mode="" Description="64-char hex key for encrypting secrets. Generate with: node -e &quot;console.log(require('crypto').randomBytes(32).toString('hex'))&quot;" Type="Variable" Display="always" Required="true" Mask="true"/>
   <Config Name="INSECURE_COOKIES" Target="INSECURE_COOKIES" Default="true" Mode="" Description="Set to true if accessing over HTTP (no reverse proxy with HTTPS). Required for most Unraid setups." Type="Variable" Display="always" Required="false" Mask="false">true</Config>
   <Config Name="TRUSTED_PROXY_COUNT" Target="TRUSTED_PROXY_COUNT" Default="0" Mode="" Description="Set to 1 if behind a reverse proxy (Nginx Proxy Manager, Traefik, Caddy) for correct rate limiting." Type="Variable" Display="advanced" Required="false" Mask="false">0</Config>
+  <Config Name="APP_URL" Target="APP_URL" Default="" Mode="" Description="Your public URL (e.g. https://invite.example.com). Used in password reset emails. Leave empty for auto-detection." Type="Variable" Display="advanced" Required="false" Mask="false"/>
 </Container>

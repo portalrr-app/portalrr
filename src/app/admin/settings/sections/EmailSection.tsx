@@ -1,6 +1,7 @@
 'use client';
 
-import { Input } from '@/components';
+import { useState } from 'react';
+import { Input, Button } from '@/components';
 import { SectionProps, Settings } from './types';
 
 interface EmailSectionProps extends SectionProps {
@@ -17,6 +18,35 @@ export default function EmailSection({
   setSettings,
   setShowSaveBar,
 }: EmailSectionProps) {
+  const [testLoading, setTestLoading] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [testEmail, setTestEmail] = useState('');
+
+  const handleTestSmtp = async () => {
+    setTestLoading(true);
+    setTestResult(null);
+    try {
+      const res = await fetch('/api/admin/email-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          smtpHost: settings.smtpHost,
+          smtpPort: settings.smtpPort,
+          smtpUser: settings.smtpUser,
+          smtpPass: settings.smtpPass || undefined,
+          smtpFrom: settings.smtpFrom,
+          recipientEmail: testEmail || undefined,
+        }),
+      });
+      const data = await res.json();
+      setTestResult({ success: data.success, message: data.message });
+    } catch {
+      setTestResult({ success: false, message: 'Failed to connect to test endpoint' });
+    } finally {
+      setTestLoading(false);
+    }
+  };
+
   return (
     <div className={styles.section}>
       <h2 className={styles.sectionTitle}>Email</h2>
@@ -55,10 +85,10 @@ export default function EmailSection({
             onChange={(e) => set('smtpUser', e.target.value)}
           />
           <Input
-            label="SMTP Password"
+            label={settings.hasSmtpPass && !settings.smtpPass ? 'SMTP Password (saved)' : 'SMTP Password'}
             type="password"
             value={settings.smtpPass}
-            placeholder={settings.hasSmtpPass && !settings.smtpPass ? 'Stored password' : ''}
+            placeholder={settings.hasSmtpPass && !settings.smtpPass ? '••••••••' : ''}
             onChange={(e) => {
               setSettings(prev => ({ ...prev, smtpPass: e.target.value }));
               setSmtpPassDirty(true);
@@ -71,6 +101,40 @@ export default function EmailSection({
           value={settings.smtpFrom}
           onChange={(e) => set('smtpFrom', e.target.value)}
         />
+        {settings.smtpHost && settings.smtpFrom && (
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+            <div style={{ flex: 1 }}>
+              <Input
+                label="Send test email to (optional)"
+                type="email"
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+                placeholder="your@email.com"
+              />
+            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleTestSmtp}
+              loading={testLoading}
+              style={{ marginBottom: '2px' }}
+            >
+              {testEmail ? 'Send Test Email' : 'Test Connection'}
+            </Button>
+          </div>
+        )}
+        {testResult && (
+          <div style={{
+            background: testResult.success ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+            border: `1px solid ${testResult.success ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+            borderRadius: '8px',
+            padding: '10px 14px',
+            fontSize: '13px',
+            color: testResult.success ? '#22c55e' : '#ef4444',
+          }}>
+            {testResult.message}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { InputHTMLAttributes, forwardRef, useState } from 'react';
+import { InputHTMLAttributes, forwardRef, useState, useId } from 'react';
 import styles from './Input.module.css';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -14,8 +14,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, hint, icon, className = '', type = 'text', id, ...props }, ref) => {
     const [focused, setFocused] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const autoId = useId();
     const hasValue = props.value !== undefined && props.value !== '' && props.value !== 0;
-    const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
+    const inputId = id || autoId;
     const isPassword = type === 'password';
     const inputType = isPassword && showPassword ? 'text' : type;
 

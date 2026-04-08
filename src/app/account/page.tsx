@@ -43,6 +43,7 @@ export default function AccountPage() {
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [emailEnabled, setEmailEnabled] = useState(false);
+  const [referralsEnabled, setReferralsEnabled] = useState(false);
 
   // Password change state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -63,7 +64,10 @@ export default function AccountPage() {
 
   useEffect(() => {
     fetchAccount();
-    fetch('/api/settings/public').then(r => r.json()).then(d => { if (d.emailEnabled) setEmailEnabled(true); }).catch(() => {});
+    fetch('/api/settings/public').then(r => r.json()).then(d => {
+      if (d.emailEnabled) setEmailEnabled(true);
+      if (d.referralInvitesEnabled) setReferralsEnabled(true);
+    }).catch(() => {});
   }, []);
 
   const fetchAccount = async () => {
@@ -503,7 +507,7 @@ export default function AccountPage() {
           </Card>
         </div>
 
-        <div className={styles.section}>
+        {referralsEnabled && <div className={styles.section}>
           <Card padding="lg">
             <div className={styles.sectionTitle}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -532,7 +536,7 @@ export default function AccountPage() {
               </div>
             )}
           </Card>
-        </div>
+        </div>}
 
         <div className={styles.footer}>
           <Link href="/">Back to home</Link>

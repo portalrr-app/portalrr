@@ -339,12 +339,24 @@ export async function PATCH(request: NextRequest) {
     const parsed = validateBody(updateUserSchema, body);
     if (!parsed.success) return parsed.response;
 
-    const { userId, localId, remoteUserId, accessUntil, autoRemove, enableLiveTv, allLibraries, libraries, source, serverId,
+    const { userId, localId, remoteUserId, email, accessUntil, autoRemove, enableLiveTv, allLibraries, libraries, source, serverId,
       disabled, disabledReason, notes, labels, discordUsername, telegramUsername, matrixId, extendDays } = parsed.data;
     const localTargetId = localId || (source === 'local' || !source ? userId : undefined);
     const remoteTargetId = remoteUserId || (source === 'jellyfin' || source === 'plex' ? userId : undefined);
 
     const updateData: Record<string, unknown> = {};
+    if (email !== undefined) {
+      if (email) {
+        // Check for duplicate email (exclude current user)
+        const existingUser = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+        if (existingUser && existingUser.id !== (localId || userId)) {
+          return NextResponse.json({ message: 'This email is already in use by another account' }, { status: 409 });
+        }
+        updateData.email = email.toLowerCase();
+      } else {
+        updateData.email = null;
+      }
+    }
     if (accessUntil !== undefined) updateData.accessUntil = accessUntil ? new Date(accessUntil) : null;
     if (autoRemove !== undefined) updateData.autoRemove = autoRemove;
     if (enableLiveTv !== undefined) updateData.enableLiveTv = enableLiveTv;
@@ -507,6 +519,43 @@ export async function PATCH(request: NextRequest) {
           where: { id: localTargetId },
           data: updateData,
         });
+      } else if (Object.keys(updateData).length > 0 && remoteTargetId) {
+        // Remote-only user with no local record — create one to store metadata
+        const username = (await (async () => {
+          if (server && server.type === 'jellyfin' && server.apiKey) {
+            const res = await fetch(`${server.url}/Users/${remoteTargetId}`, {
+              headers: { 'X-MediaBrowser-Token': server.apiKey },
+            });
+            if (res.ok) { const d = await res.json(); return d.Name; }
+          }
+          return remoteTargetId;
+        })());
+
+        user = await prisma.user.create({
+          data: {
+            username: username.toLowerCase(),
+            email: (updateData.email as string) || '',
+            passwordHash: '',
+            serverId: serverId || undefined,
+            notes: (updateData.notes as string) || null,
+            discordUsername: (updateData.discordUsername as string) || null,
+            telegramUsername: (updateData.telegramUsername as string) || null,
+            matrixId: (updateData.matrixId as string) || null,
+            disabled: (updateData.disabled as boolean) || false,
+            libraries: (updateData.libraries as string) || '[]',
+          },
+        });
+
+        // Create UserServer membership so the user is linked
+        if (serverId) {
+          await prisma.userServer.create({
+            data: {
+              userId: user.id,
+              serverId,
+              remoteUserId: remoteTargetId,
+            },
+          }).catch(() => {}); // Ignore if already exists
+        }
       }
     }
 

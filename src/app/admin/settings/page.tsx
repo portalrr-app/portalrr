@@ -394,22 +394,13 @@ export default function SettingsPage() {
         return;
       }
       success('Settings saved');
-      setSettings((prev) => ({
-        ...prev,
-        jellyseerrApiKey: '',
-        hasJellyseerrApiKey: jellyseerrApiKeyDirty ? Boolean(settings.jellyseerrApiKey) : prev.hasJellyseerrApiKey,
-        smtpPass: '',
-        hasSmtpPass: smtpPassDirty ? Boolean(settings.smtpPass) : prev.hasSmtpPass,
-        discordBotToken: '',
-        hasDiscordBotToken: discordBotTokenDirty ? Boolean(settings.discordBotToken) : prev.hasDiscordBotToken,
-        telegramBotToken: '',
-        hasTelegramBotToken: telegramBotTokenDirty ? Boolean(settings.telegramBotToken) : prev.hasTelegramBotToken,
-      }));
       setJellyseerrApiKeyDirty(false);
       setSmtpPassDirty(false);
       setDiscordBotTokenDirty(false);
       setTelegramBotTokenDirty(false);
       setShowSaveBar(false);
+      // Re-fetch settings from API to get correct hasSmtpPass/hasDiscordBotToken etc.
+      fetchSettings();
     } catch {
       error('Failed to save settings');
     } finally {

@@ -48,21 +48,7 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json();
 
-    // Restrict security-critical settings to local admins only
-    if (auth.admin.source !== 'local') {
-      const restrictedFields = [
-        'mediaServerAuth', 'smtpHost', 'smtpPort', 'smtpUser', 'smtpPass', 'smtpFrom', 'smtpSecure',
-        'passwordMinLength', 'captchaEnabled', 'discordBotToken', 'discordServerId', 'discordChannelId',
-        'telegramBotToken', 'telegramChatId',
-      ];
-      const attempted = restrictedFields.filter((field) => field in body);
-      if (attempted.length > 0) {
-        return NextResponse.json(
-          { message: `Only the Portalrr admin can modify security-critical settings: ${attempted.join(', ')}` },
-          { status: 403 }
-        );
-      }
-    }
+    // All admins (local and media server) can modify all settings
     const parsed = validateBody(updateSettingsSchema, body);
     if (!parsed.success) return parsed.response;
 

@@ -148,6 +148,7 @@ npm start
 | `PORT` | No | `3939` | Server port |
 | `INSECURE_COOKIES` | No | `false` | Set to `true` for HTTP-only deployments (LAN without HTTPS) |
 | `TRUSTED_PROXY_COUNT` | No | `0` | Set to `1` if behind a reverse proxy (Nginx, Traefik, Caddy) for correct rate limiting |
+| `APP_URL` | No | auto-detected | Your public URL (e.g. `https://invite.example.com`). Used in password reset emails. |
 
 Everything else — servers, appearance, integrations, email, bots — is configured through the admin dashboard. No config files to maintain.
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { HTMLAttributes, forwardRef, useEffect, useCallback, useRef } from 'react';
+import { HTMLAttributes, forwardRef, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import styles from './Modal.module.css';
 
@@ -11,9 +11,6 @@ export interface ModalProps extends HTMLAttributes<HTMLDivElement> {
   description?: string;
   size?: 'sm' | 'md' | 'lg';
 }
-
-const FOCUSABLE_SELECTOR =
-  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export const Modal = forwardRef<HTMLDivElement, ModalProps>(
   (
@@ -30,63 +27,22 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
     ref
   ) => {
     const modalRef = useRef<HTMLDivElement | null>(null);
-    const previousFocusRef = useRef<HTMLElement | null>(null);
-
-    const handleKeyDown = useCallback(
-      (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          onClose();
-          return;
-        }
-
-        // Focus trap
-        if (e.key === 'Tab' && modalRef.current) {
-          const focusable = modalRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
-          if (focusable.length === 0) return;
-
-          const first = focusable[0];
-          const last = focusable[focusable.length - 1];
-
-          if (e.shiftKey) {
-            if (document.activeElement === first) {
-              e.preventDefault();
-              last.focus();
-            }
-          } else {
-            if (document.activeElement === last) {
-              e.preventDefault();
-              first.focus();
-            }
-          }
-        }
-      },
-      [onClose]
-    );
 
     useEffect(() => {
-      if (isOpen) {
-        previousFocusRef.current = document.activeElement as HTMLElement;
-        document.addEventListener('keydown', handleKeyDown);
-        document.body.style.overflow = 'hidden';
+      if (!isOpen) return;
 
-        // Focus first focusable element inside modal
-        requestAnimationFrame(() => {
-          if (modalRef.current) {
-            const first = modalRef.current.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
-            if (first) first.focus();
-          }
-        });
-      }
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') onClose();
+      };
+
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+
       return () => {
         document.removeEventListener('keydown', handleKeyDown);
         document.body.style.overflow = '';
-
-        // Restore focus to previously focused element
-        if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
-          previousFocusRef.current.focus();
-        }
       };
-    }, [isOpen, handleKeyDown]);
+    }, [isOpen, onClose]);
 
     if (!isOpen) return null;
 

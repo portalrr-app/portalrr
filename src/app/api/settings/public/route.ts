@@ -44,6 +44,7 @@ export async function GET(_request: NextRequest) {
         passwordRequireNumber: true,
         passwordRequireSpecial: true,
         emailEnabled: true,
+        referralInvitesEnabled: true,
       },
     });
 
