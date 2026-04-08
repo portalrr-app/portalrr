@@ -15,7 +15,6 @@ function ForgotPasswordForm() {
   const [requestLoading, setRequestLoading] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
   const [requestError, setRequestError] = useState('');
-
   // Step 2: confirm reset
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

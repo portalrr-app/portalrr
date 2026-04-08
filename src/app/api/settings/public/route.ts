@@ -43,6 +43,7 @@ export async function GET(_request: NextRequest) {
         passwordRequireUppercase: true,
         passwordRequireNumber: true,
         passwordRequireSpecial: true,
+        emailEnabled: true,
       },
     });
 

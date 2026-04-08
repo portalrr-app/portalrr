@@ -42,6 +42,7 @@ export default function AccountPage() {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
+  const [emailEnabled, setEmailEnabled] = useState(false);
 
   // Password change state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -62,6 +63,7 @@ export default function AccountPage() {
 
   useEffect(() => {
     fetchAccount();
+    fetch('/api/settings/public').then(r => r.json()).then(d => { if (d.emailEnabled) setEmailEnabled(true); }).catch(() => {});
   }, []);
 
   const fetchAccount = async () => {
@@ -268,7 +270,7 @@ export default function AccountPage() {
                 Sign In
               </Button>
               <div className={styles.footer}>
-                <Link href="/forgot-password">Forgot your password?</Link>
+                {emailEnabled && <Link href="/forgot-password">Forgot your password?</Link>}
               </div>
             </form>
           </Card>
