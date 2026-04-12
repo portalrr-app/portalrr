@@ -1,5 +1,6 @@
 services:
   portalrr:
+    image: ghcr.io/portalrr-app/portalrr:latest
     build: .
     container_name: portalrr
     restart: unless-stopped

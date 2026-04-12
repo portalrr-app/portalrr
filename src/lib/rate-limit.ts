@@ -46,8 +46,8 @@ export function checkRateLimit(
 }
 
 export const RATE_LIMITS = {
-  login: { maxAttempts: 5, windowMs: 15 * 60 * 1000 },
-  adminLogin: { maxAttempts: 3, windowMs: 30 * 60 * 1000 },
+  login: { maxAttempts: 10, windowMs: 15 * 60 * 1000 },
+  adminLogin: { maxAttempts: 10, windowMs: 15 * 60 * 1000 },
   registration: { maxAttempts: 3, windowMs: 15 * 60 * 1000 },
   inviteVerify: { maxAttempts: 20, windowMs: 15 * 60 * 1000 },
   passwordReset: { maxAttempts: 3, windowMs: 15 * 60 * 1000 },
