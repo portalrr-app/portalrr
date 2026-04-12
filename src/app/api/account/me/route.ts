@@ -46,6 +46,7 @@ export async function GET(request: NextRequest) {
       id: user.id,
       username: user.username,
       email: user.email,
+      emailRequired: !user.email,
       createdAt: user.createdAt.toISOString(),
       accessUntil: user.accessUntil?.toISOString() || null,
       server: server

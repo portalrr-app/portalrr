@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       const emailPromises = targetUsers
         .filter((u) => u.email)
         .map(async (user) => {
-          const sent = await sendTemplatedEmail(user.email, 'announcement', {
+          const sent = await sendTemplatedEmail(user.email!, 'announcement', {
             title,
             body: announcementBody,
           });
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
  */
 async function resolveTargetUsers(
   sentTo: string
-): Promise<Array<{ id: string; email: string; username: string; labels: string }>> {
+): Promise<Array<{ id: string; email: string | null; username: string; labels: string }>> {
   if (sentTo === 'all') {
     return prisma.user.findMany({
       select: { id: true, email: true, username: true, labels: true },

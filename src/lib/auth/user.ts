@@ -8,7 +8,7 @@ function unauthorized() {
 
 export async function authenticateUser(
   request: NextRequest
-): Promise<{ user: { id: string; username: string; email: string; inviteId: string | null } } | NextResponse> {
+): Promise<{ user: { id: string; username: string; email: string | null; inviteId: string | null } } | NextResponse> {
   const sessionId = request.cookies.get('user_session')?.value;
 
   if (!sessionId) return unauthorized();
@@ -53,7 +53,7 @@ export async function authenticateUser(
 }
 
 export function isUserAuthError(
-  result: { user: { id: string; username: string; email: string; inviteId: string | null } } | NextResponse
+  result: { user: { id: string; username: string; email: string | null; inviteId: string | null } } | NextResponse
 ): result is NextResponse {
   return result instanceof NextResponse;
 }

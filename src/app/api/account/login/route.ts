@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function createSession(user: { id: string; username: string; email: string; [key: string]: unknown }, request?: NextRequest) {
+async function createSession(user: { id: string; username: string; email: string | null; [key: string]: unknown }, request?: NextRequest) {
   // Clean up expired sessions
   await prisma.userSession.deleteMany({
     where: { userId: user.id, expiresAt: { lt: new Date() } },
@@ -158,6 +158,7 @@ async function createSession(user: { id: string; username: string; email: string
   const response = NextResponse.json({
     success: true,
     user: { id: user.id, username: user.username, email: user.email },
+    emailRequired: !user.email,
   });
 
   response.cookies.set('user_session', session.id, {
@@ -303,7 +304,7 @@ async function findOrCreateLocalUser(
   }
 
   // Check by email too (only if a real email is provided)
-  if (email && !email.includes('@server.local')) {
+  if (email) {
     const existingByEmail = await prisma.user.findUnique({
       where: { email },
     });
@@ -320,14 +321,13 @@ async function findOrCreateLocalUser(
   }
 
   // Create a new local user linked to the server
-  // Use a unique placeholder email if none provided — include serverId + username to avoid collisions
+  // Email left null if not provided — user will be prompted to set it on first login
   const passwordHash = await bcrypt.hash(password, 12);
-  const effectiveEmail = email || `${username.toLowerCase()}.${serverId}@mediaserver.local`;
 
   const user = await prisma.user.create({
     data: {
       username: username.toLowerCase(),
-      email: effectiveEmail,
+      email: email || null,
       passwordHash,
       serverId,
     },

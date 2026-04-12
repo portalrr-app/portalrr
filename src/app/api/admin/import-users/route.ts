@@ -53,15 +53,17 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Also check email uniqueness — use a placeholder if none available
-        const email = userDetails.email || `${userDetails.username}@imported.local`;
-        const existingEmail = await prisma.user.findUnique({
-          where: { email },
-        });
+        // Also check email uniqueness if email is available
+        const email = userDetails.email || null;
+        if (email) {
+          const existingEmail = await prisma.user.findUnique({
+            where: { email },
+          });
 
-        if (existingEmail) {
-          skipped++;
-          continue;
+          if (existingEmail) {
+            skipped++;
+            continue;
+          }
         }
 
         // Generate a random password hash (users will authenticate via media server)

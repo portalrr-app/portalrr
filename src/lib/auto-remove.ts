@@ -124,10 +124,10 @@ async function sendExpiryNotifications(
       daysRemaining <= settings.notifyBeforeExpiryDays &&
       !state.reminderSent
     ) {
-      const sent = await sendTemplatedEmail(user.email, 'account_expiry', {
+      const sent = user.email ? await sendTemplatedEmail(user.email, 'account_expiry', {
         username: user.username,
         expiresAt: user.accessUntil.toISOString().split('T')[0],
-      }).catch(() => false);
+      }).catch(() => false) : false;
 
       if (sent) {
         state.reminderSent = true;
@@ -140,10 +140,10 @@ async function sendExpiryNotifications(
       daysRemaining < 0 &&
       !state.expiredSent
     ) {
-      const sent = await sendTemplatedEmail(user.email, 'account_expiry', {
+      const sent = user.email ? await sendTemplatedEmail(user.email, 'account_expiry', {
         username: user.username,
         expiresAt: user.accessUntil.toISOString().split('T')[0],
-      }).catch(() => false);
+      }).catch(() => false) : false;
 
       if (sent) {
         state.expiredSent = true;

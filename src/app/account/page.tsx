@@ -16,7 +16,8 @@ interface ServerInfo {
 interface UserAccount {
   id: string;
   username: string;
-  email: string;
+  email: string | null;
+  emailRequired?: boolean;
   createdAt: string;
   accessUntil: string | null;
   server: ServerInfo | null;
@@ -58,6 +59,9 @@ export default function AccountPage() {
   const [emailInput, setEmailInput] = useState('');
   const [emailError, setEmailError] = useState('');
   const [emailLoading, setEmailLoading] = useState(false);
+  const [setupEmailInput, setSetupEmailInput] = useState('');
+  const [setupEmailError, setSetupEmailError] = useState('');
+  const [setupEmailLoading, setSetupEmailLoading] = useState(false);
   const [referralError, setReferralError] = useState('');
   const [referrals, setReferrals] = useState<ReferralInvite[]>([]);
   const [referralLoading, setReferralLoading] = useState(false);
@@ -235,6 +239,35 @@ export default function AccountPage() {
     setShowLogin(true);
   };
 
+  const handleSetupEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSetupEmailError('');
+    if (!setupEmailInput || !setupEmailInput.includes('@')) {
+      setSetupEmailError('Please enter a valid email address');
+      return;
+    }
+
+    setSetupEmailLoading(true);
+    try {
+      const res = await fetch('/api/account/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: setupEmailInput }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setUser((prev) => prev ? { ...prev, email: data.email, emailRequired: false } : prev);
+      } else {
+        setSetupEmailError(data.message || 'Failed to set email');
+      }
+    } catch {
+      setSetupEmailError('Something went wrong');
+    } finally {
+      setSetupEmailLoading(false);
+    }
+  };
+
   if (loading) return null;
 
   if (showLogin) {
@@ -282,6 +315,45 @@ export default function AccountPage() {
           <div className={styles.footer}>
             <Link href="/">Back to home</Link>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (user?.emailRequired) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.background} />
+        <div className={styles.content}>
+          <div className={styles.header}>
+            <div className={styles.logoIcon}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+              </svg>
+            </div>
+            <h1 className={styles.title}>Set Up Your Email</h1>
+            <p className={styles.subtitle}>
+              Welcome, <strong>{user?.username}</strong>! Please add your email address to continue. This is needed for password resets and account notifications.
+            </p>
+          </div>
+
+          <Card padding="lg">
+            <form onSubmit={handleSetupEmail} className={styles.form}>
+              <Input
+                label="Email Address"
+                type="email"
+                value={setupEmailInput}
+                onChange={(e) => setSetupEmailInput(e.target.value)}
+                error={setupEmailError}
+                placeholder="you@example.com"
+                autoFocus
+              />
+              <Button type="submit" fullWidth loading={setupEmailLoading}>
+                Continue
+              </Button>
+            </form>
+          </Card>
         </div>
       </div>
     );
@@ -341,7 +413,7 @@ export default function AccountPage() {
               <span className={styles.infoValue}>
                 {user?.email}
                 <button
-                  onClick={() => { setEditingEmail(true); setEmailInput(user?.email || ''); setEmailError(''); }}
+                  onClick={() => { setEditingEmail(true); setEmailInput(user?.email ?? ''); setEmailError(''); }}
                   className={styles.editBtn}
                   title="Edit email"
                 >

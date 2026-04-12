@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      sendTemplatedEmail(user.email, 'password_reset', {
+      if (user.email) sendTemplatedEmail(user.email, 'password_reset', {
         username: user.username,
         resetUrl: `/account/reset-password?token=${token}`,
         serverName: server.name,

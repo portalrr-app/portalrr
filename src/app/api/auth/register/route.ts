@@ -290,7 +290,7 @@ export async function POST(request: NextRequest) {
 
     // Send welcome email if enabled
     if (settings?.welcomeEmailEnabled) {
-      sendTemplatedEmail(user.email, 'welcome', {
+      sendTemplatedEmail(user.email!, 'welcome', {
         username: user.username,
         accessUntil: user.accessUntil?.toISOString() || null,
       }).catch(logOnError('register:welcome-email'));

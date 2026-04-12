@@ -565,7 +565,7 @@ export async function PATCH(request: NextRequest) {
       dispatchWebhook(event, { username: user.username, email: user.email, reason: disabledReason });
       auditLog(event, { admin: auth.admin.username, targetUser: user.username, reason: disabledReason });
       if (disabled) {
-        sendTemplatedEmail(user.email, 'account_disabled', { username: user.username, reason: disabledReason }).catch(logOnError('users:disable-email'));
+        if (user.email) sendTemplatedEmail(user.email, 'account_disabled', { username: user.username, reason: disabledReason }).catch(logOnError('users:disable-email'));
         dispatchDiscordNotification('user.disabled', {
           username: user.username,
           reason: disabledReason,
