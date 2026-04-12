@@ -538,12 +538,6 @@ export default function AccountPage() {
 
             {user?.server?.type !== 'plex' && (
               <form onSubmit={handlePasswordChange} className={styles.form}>
-                {user?.server?.type === 'jellyfin' && (
-                  <div className={styles.warningMessage}>
-                    This will also update your Jellyfin password if admin credentials are configured.
-                  </div>
-                )}
-
                 <Input
                   label="Current Password"
                   type="password"
