@@ -21,6 +21,16 @@ export async function runAutoRemoveIfDue() {
     await sendExpiryNotifications(settings);
     await processExpiredInvites();
 
+    // Clean up expired/used password reset tokens
+    await prisma.passwordResetToken.deleteMany({
+      where: {
+        OR: [
+          { expiresAt: { lt: new Date() } },
+          { usedAt: { not: null } },
+        ],
+      },
+    }).catch(() => {});
+
     const expiredUsers = await prisma.user.findMany({
       where: {
         autoRemove: true,
@@ -96,9 +106,14 @@ async function sendExpiryNotifications(
     notifyOnExpiry: boolean;
   } | null
 ) {
+  const windowDays = settings?.notifyBeforeExpiryDays ?? 3;
+  const windowEnd = new Date();
+  windowEnd.setDate(windowEnd.getDate() + windowDays + 1);
+
   const users = await prisma.user.findMany({
     where: {
-      accessUntil: { not: null },
+      accessUntil: { not: null, lt: windowEnd },
+      email: { not: null },
     },
   });
 
@@ -127,6 +142,7 @@ async function sendExpiryNotifications(
       const sent = user.email ? await sendTemplatedEmail(user.email, 'account_expiry', {
         username: user.username,
         expiresAt: user.accessUntil.toISOString().split('T')[0],
+        expiring: true,
       }).catch(() => false) : false;
 
       if (sent) {
@@ -143,6 +159,7 @@ async function sendExpiryNotifications(
       const sent = user.email ? await sendTemplatedEmail(user.email, 'account_expiry', {
         username: user.username,
         expiresAt: user.accessUntil.toISOString().split('T')[0],
+        expired: true,
       }).catch(() => false) : false;
 
       if (sent) {
@@ -187,6 +204,7 @@ async function removeFromServer(
     // Find user ID by username
     const res = await fetch(`${server.url}/Users`, {
       headers: { 'X-MediaBrowser-Token': server.apiKey },
+      signal: AbortSignal.timeout(15000),
     });
     if (!res.ok) return;
 
@@ -199,6 +217,7 @@ async function removeFromServer(
     const delRes = await fetch(`${server.url}/Users/${match.Id}`, {
       method: 'DELETE',
       headers: { 'X-MediaBrowser-Token': server.apiKey },
+      signal: AbortSignal.timeout(15000),
     });
     if (!delRes.ok) {
       throw new Error(`Jellyfin delete failed: ${delRes.status}`);
@@ -211,6 +230,7 @@ async function removeFromServer(
         'Accept': 'application/json',
         'X-Plex-Client-Identifier': 'portalrr',
       },
+      signal: AbortSignal.timeout(15000),
     });
     if (!friendsRes.ok) return;
 
@@ -226,6 +246,7 @@ async function removeFromServer(
         'X-Plex-Token': server.token,
         'X-Plex-Client-Identifier': 'portalrr',
       },
+      signal: AbortSignal.timeout(15000),
     });
     if (!delRes.ok) {
       throw new Error(`Plex friend remove failed: ${delRes.status}`);

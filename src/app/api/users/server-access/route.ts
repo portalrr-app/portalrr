@@ -94,6 +94,13 @@ export async function POST(request: NextRequest) {
         });
       }
     } else if (server.type === 'plex' && server.token) {
+      if (!user.email) {
+        return NextResponse.json(
+          { message: 'Plex requires an email address. Please add an email to this user first.' },
+          { status: 400 }
+        );
+      }
+
       // Get machine identifier
       const identityRes = await fetch(`${server.url}/identity`, {
         headers: { 'X-Plex-Token': server.token, 'Accept': 'application/json' },
@@ -138,6 +145,7 @@ export async function POST(request: NextRequest) {
           'X-Plex-Token': server.token,
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'X-Plex-Client-Identifier': 'portalrr',
         },
         body: JSON.stringify({
           machineIdentifier: machineId,
@@ -326,9 +334,12 @@ export async function DELETE(request: NextRequest) {
             }
           } else {
             // Remove friend entirely
-            const delRes = await fetch(`https://plex.tv/api/friends/${match.id}`, {
+            const delRes = await fetch(`https://plex.tv/api/v2/friends/${match.id}`, {
               method: 'DELETE',
-              headers: { 'X-Plex-Token': server.token },
+              headers: {
+                'X-Plex-Token': server.token,
+                'X-Plex-Client-Identifier': 'portalrr',
+              },
             });
 
             if (!delRes.ok) {

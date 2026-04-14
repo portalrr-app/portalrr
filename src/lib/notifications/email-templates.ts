@@ -31,10 +31,10 @@ This link expires in 30 minutes. If you didn't request this, you can safely igno
 - Created by: {{createdBy}}`,
   },
   account_expiry: {
-    subject: '{{appName}} - Your Access is Expiring Soon',
+    subject: '{{appName}} - {{#if expired}}Your Access Has Expired{{/if}}{{#if expiring}}Your Access is Expiring Soon{{/if}}',
     body: `Hi {{username}},
 
-Your access to {{serverName}} will expire on {{expiresAt}}.
+{{#if expired}}Your access to {{serverName}} expired on {{expiresAt}}.{{/if}}{{#if expiring}}Your access to {{serverName}} will expire on {{expiresAt}}.{{/if}}
 
 Contact your server admin if you'd like to renew your access.`,
   },

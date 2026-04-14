@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { authenticateAdmin, isAuthError } from '@/lib/auth/admin';
 import { createServerSchema, validateBody } from '@/lib/validation';
 import { encrypt, decrypt } from '@/lib/crypto';
+import { auditLog } from '@/lib/audit';
 
 export async function GET(request: NextRequest) {
   try {
@@ -75,6 +76,8 @@ export async function POST(request: NextRequest) {
         isActive: true,
       },
     });
+
+    auditLog('server.created', { admin: auth.admin.username, serverName: name, serverType: type });
 
     // Never return secrets in the response
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

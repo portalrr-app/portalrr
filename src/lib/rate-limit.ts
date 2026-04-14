@@ -67,7 +67,11 @@ export function getClientIp(request: NextRequest): string {
       return ips[idx] || '127.0.0.1';
     }
   }
-  return request.headers.get('x-real-ip') || '127.0.0.1';
+  // x-real-ip is only trustworthy when set by a known reverse proxy
+  if (trustedProxies > 0) {
+    return request.headers.get('x-real-ip') || '127.0.0.1';
+  }
+  return '127.0.0.1';
 }
 
 export function rateLimitResponse(retryAfterMs: number) {

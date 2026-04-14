@@ -198,10 +198,10 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      const baseUrl = (process.env.APP_URL || '').replace(/\/$/, '');
       if (user.email) sendTemplatedEmail(user.email, 'password_reset', {
         username: user.username,
-        resetUrl: `/account/reset-password?token=${token}`,
-        serverName: server.name,
+        resetLink: `${baseUrl}/forgot-password?token=${token}`,
       }).catch((err) => {
         console.error('Failed to send reset email for recreated user:', err);
       });

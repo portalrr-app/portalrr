@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { userLoginSchema, validateBody } from '@/lib/validation';
 import { checkRateLimit, RATE_LIMITS, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
@@ -324,14 +325,27 @@ async function findOrCreateLocalUser(
   // Email left null if not provided — user will be prompted to set it on first login
   const passwordHash = await bcrypt.hash(password, 12);
 
-  const user = await prisma.user.create({
-    data: {
-      username: username.toLowerCase(),
-      email: email || null,
-      passwordHash,
-      serverId,
-    },
-  });
-
-  return user;
+  try {
+    const user = await prisma.user.create({
+      data: {
+        username: username.toLowerCase(),
+        email: email || null,
+        passwordHash,
+        serverId,
+      },
+    });
+    return user;
+  } catch (error) {
+    // Handle race condition: another request created this user concurrently
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      const existing = await prisma.user.findUnique({
+        where: { username: username.toLowerCase() },
+      });
+      if (existing) return existing;
+    }
+    throw error;
+  }
 }

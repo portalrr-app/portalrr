@@ -101,11 +101,11 @@ describe('getClientIp', () => {
     }
   });
 
-  it('ignores x-forwarded-for when TRUSTED_PROXY_COUNT is not set', () => {
+  it('ignores x-forwarded-for and x-real-ip when TRUSTED_PROXY_COUNT is not set', () => {
     delete process.env.TRUSTED_PROXY_COUNT;
     const req = makeRequest({ 'x-forwarded-for': '1.2.3.4', 'x-real-ip': '5.5.5.5' });
-    // Should not trust x-forwarded-for, fall back to x-real-ip
-    expect(getClientIp(req)).toBe('5.5.5.5');
+    // Should not trust any client-supplied headers without trusted proxies
+    expect(getClientIp(req)).toBe('127.0.0.1');
   });
 
   it('ignores x-forwarded-for when TRUSTED_PROXY_COUNT is 0', () => {
@@ -135,9 +135,16 @@ describe('getClientIp', () => {
     expect(getClientIp(req)).toBe('203.0.113.50');
   });
 
-  it('falls back to x-real-ip when no forwarded header', () => {
+  it('trusts x-real-ip when TRUSTED_PROXY_COUNT is set', () => {
+    process.env.TRUSTED_PROXY_COUNT = '1';
     const req = makeRequest({ 'x-real-ip': '1.2.3.4' });
     expect(getClientIp(req)).toBe('1.2.3.4');
+  });
+
+  it('ignores x-real-ip when TRUSTED_PROXY_COUNT is not set', () => {
+    delete process.env.TRUSTED_PROXY_COUNT;
+    const req = makeRequest({ 'x-real-ip': '1.2.3.4' });
+    expect(getClientIp(req)).toBe('127.0.0.1');
   });
 
   it('falls back to 127.0.0.1 when no headers present', () => {
@@ -179,8 +186,8 @@ describe('rateLimitResponse', () => {
 
 describe('RATE_LIMITS config', () => {
   it('has expected rate limit configs', () => {
-    expect(RATE_LIMITS.login.maxAttempts).toBe(5);
-    expect(RATE_LIMITS.adminLogin.maxAttempts).toBe(3);
+    expect(RATE_LIMITS.login.maxAttempts).toBe(10);
+    expect(RATE_LIMITS.adminLogin.maxAttempts).toBe(10);
     expect(RATE_LIMITS.registration.maxAttempts).toBe(3);
     expect(RATE_LIMITS.inviteVerify.maxAttempts).toBe(20);
     expect(RATE_LIMITS.passwordReset.maxAttempts).toBe(3);

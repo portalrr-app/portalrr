@@ -5,8 +5,10 @@ import { authenticateAdmin, isAuthError } from '@/lib/auth/admin';
 import { bulkUsersSchema, validateBody } from '@/lib/validation';
 import { decryptServerSecrets } from '@/lib/crypto';
 import { logOnError } from '@/lib/logger';
+import { auditLog } from '@/lib/audit';
 
 export async function POST(request: NextRequest) {
+  try {
   const auth = await authenticateAdmin(request);
   if (isAuthError(auth)) return auth;
 
@@ -79,6 +81,7 @@ export async function POST(request: NextRequest) {
       where: { id: { in: effectiveLocalIds } },
     });
 
+    auditLog('users.bulk_deleted', { admin: auth.admin.username, count: effectiveLocalIds.length });
     return NextResponse.json({ success: true, count: effectiveLocalIds.length });
   }
 
@@ -87,6 +90,7 @@ export async function POST(request: NextRequest) {
       where: { id: { in: effectiveLocalIds } },
       data: { disabled: true, disabledAt: new Date() },
     });
+    auditLog('users.bulk_disabled', { admin: auth.admin.username, count: effectiveLocalIds.length });
     return NextResponse.json({ success: true, count: effectiveLocalIds.length });
   }
 
@@ -95,6 +99,7 @@ export async function POST(request: NextRequest) {
       where: { id: { in: effectiveLocalIds } },
       data: { disabled: false, disabledAt: null, disabledReason: null },
     });
+    auditLog('users.bulk_enabled', { admin: auth.admin.username, count: effectiveLocalIds.length });
     return NextResponse.json({ success: true, count: effectiveLocalIds.length });
   }
 
@@ -116,8 +121,16 @@ export async function POST(request: NextRequest) {
       data: updateData,
     });
 
+    auditLog('users.bulk_profile_applied', { admin: auth.admin.username, count: effectiveLocalIds.length });
     return NextResponse.json({ success: true, count: effectiveLocalIds.length });
   }
 
   return NextResponse.json({ message: 'Unsupported bulk action' }, { status: 400 });
+  } catch (error) {
+    console.error('Error in bulk users operation:', error);
+    return NextResponse.json(
+      { message: 'Failed to perform bulk operation' },
+      { status: 500 }
+    );
+  }
 }

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { authenticateAdmin, isAuthError } from '@/lib/auth/admin';
 import { updateServerSchema, validateBody } from '@/lib/validation';
 import { encrypt } from '@/lib/crypto';
+import { auditLog } from '@/lib/audit';
 
 export async function GET(
   request: NextRequest,
@@ -66,10 +67,23 @@ export async function PATCH(
     if (effectiveType === 'jellyfin' && adminUsername !== undefined) updateData.adminUsername = adminUsername;
     if (effectiveType === 'jellyfin' && adminPassword !== undefined) updateData.adminPassword = adminPassword ? encrypt(adminPassword) : null;
 
+    // Clear stale credentials from the old server type
+    if (type && existingServer && type !== existingServer.type) {
+      if (type === 'plex') {
+        updateData.apiKey = null;
+        updateData.adminUsername = null;
+        updateData.adminPassword = null;
+      } else if (type === 'jellyfin') {
+        updateData.token = null;
+      }
+    }
+
     const server = await prisma.server.update({
       where: { id },
       data: updateData,
     });
+
+    auditLog('server.updated', { admin: auth.admin.username, serverId: id });
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { token: _t, apiKey: _a, adminUsername: _u, adminPassword: _p, ...publicServer } = server;
@@ -108,6 +122,7 @@ export async function DELETE(
       where: { id },
     });
 
+    auditLog('server.deleted', { admin: auth.admin.username, serverId: id });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting server:', error);

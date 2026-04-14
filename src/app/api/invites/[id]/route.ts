@@ -25,18 +25,18 @@ export async function PATCH(
     if (body.maxUses !== undefined) {
       const n = Number(body.maxUses);
       if (isNaN(n) || n < 0 || n > 10000) return NextResponse.json({ message: 'maxUses must be 0-10000' }, { status: 400 });
-      data.maxUses = n;
+      data.maxUses = Math.floor(n);
     }
     if (body.accessDurationDays !== undefined) {
       const n = Number(body.accessDurationDays);
       if (isNaN(n) || n < 0 || n > 36500) return NextResponse.json({ message: 'accessDurationDays must be 0-36500' }, { status: 400 });
-      data.accessDurationDays = n;
+      data.accessDurationDays = Math.floor(n);
     }
     if (body.autoRemove !== undefined) data.autoRemove = Boolean(body.autoRemove);
     if (body.notifyOnUse !== undefined) data.notifyOnUse = Boolean(body.notifyOnUse);
     if (body.notifyOnExpiry !== undefined) data.notifyOnExpiry = Boolean(body.notifyOnExpiry);
-    if (body.label !== undefined) data.label = body.label || null;
-    if (body.libraries !== undefined) data.libraries = JSON.stringify(body.libraries);
+    if (body.label !== undefined) data.label = typeof body.label === 'string' ? (body.label.slice(0, 100) || null) : null;
+    if (body.libraries !== undefined && Array.isArray(body.libraries)) data.libraries = JSON.stringify(body.libraries.map(String).slice(0, 100));
 
     if (body.expiresInDays !== undefined) {
       const days = Number(body.expiresInDays);
@@ -44,9 +44,8 @@ export async function PATCH(
     }
 
     if (body.passphrase !== undefined) {
-      data.passphrase = body.passphrase
-        ? await bcrypt.hash(body.passphrase, 10)
-        : null;
+      const pp = typeof body.passphrase === 'string' ? body.passphrase.slice(0, 128) : '';
+      data.passphrase = pp ? await bcrypt.hash(pp, 10) : null;
     }
 
     if (body.status !== undefined) {

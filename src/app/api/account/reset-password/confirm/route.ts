@@ -19,6 +19,32 @@ export async function POST(request: NextRequest) {
 
     const { token, newPassword } = parsed.data;
 
+    // Validate password against configurable rules
+    const pwSettings = await prisma.settings.findFirst({
+      select: {
+        passwordMinLength: true,
+        passwordRequireUppercase: true,
+        passwordRequireNumber: true,
+        passwordRequireSpecial: true,
+      },
+    });
+
+    if (pwSettings) {
+      const minLen = pwSettings.passwordMinLength || 8;
+      if (newPassword.length < minLen) {
+        return NextResponse.json({ message: `Password must be at least ${minLen} characters` }, { status: 400 });
+      }
+      if (pwSettings.passwordRequireUppercase && !/[A-Z]/.test(newPassword)) {
+        return NextResponse.json({ message: 'Password must contain at least one uppercase letter' }, { status: 400 });
+      }
+      if (pwSettings.passwordRequireNumber && !/\d/.test(newPassword)) {
+        return NextResponse.json({ message: 'Password must contain at least one number' }, { status: 400 });
+      }
+      if (pwSettings.passwordRequireSpecial && !/[^a-zA-Z0-9]/.test(newPassword)) {
+        return NextResponse.json({ message: 'Password must contain at least one special character' }, { status: 400 });
+      }
+    }
+
     const resetToken = await prisma.passwordResetToken.findUnique({
       where: { token },
       include: { user: true },

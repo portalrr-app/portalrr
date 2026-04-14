@@ -12,6 +12,7 @@ const { mockPrisma, mockDispatchWebhook } = vi.hoisted(() => {
       settings: mockModel(),
       user: mockModel(),
       invite: mockModel(),
+      passwordResetToken: mockModel(),
     },
     mockDispatchWebhook: vi.fn(),
   };
@@ -31,6 +32,7 @@ describe('auto-remove', () => {
     vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 2 * 60 * 60 * 1000);
     mockPrisma.invite.findMany.mockResolvedValue([]);
     mockPrisma.user.findMany.mockResolvedValue([]);
+    mockPrisma.passwordResetToken.deleteMany.mockResolvedValue({ count: 0 });
   });
 
   it('disables users when policy is "disable"', async () => {

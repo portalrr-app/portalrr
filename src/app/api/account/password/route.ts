@@ -6,6 +6,7 @@ import { changePasswordSchema, validateBody } from '@/lib/validation';
 import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { getJellyfinAuthToken, changeJellyfinPassword, findJellyfinUserByName } from '@/lib/servers/jellyfin';
 import { decryptServerSecrets, generateSessionToken } from '@/lib/crypto';
+import { auditLog } from '@/lib/audit';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,6 +22,32 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) return parsed.response;
 
     const { currentPassword, newPassword } = parsed.data;
+
+    // Validate password against configurable rules
+    const pwSettings = await prisma.settings.findFirst({
+      select: {
+        passwordMinLength: true,
+        passwordRequireUppercase: true,
+        passwordRequireNumber: true,
+        passwordRequireSpecial: true,
+      },
+    });
+
+    if (pwSettings) {
+      const minLen = pwSettings.passwordMinLength || 8;
+      if (newPassword.length < minLen) {
+        return NextResponse.json({ message: `Password must be at least ${minLen} characters` }, { status: 400 });
+      }
+      if (pwSettings.passwordRequireUppercase && !/[A-Z]/.test(newPassword)) {
+        return NextResponse.json({ message: 'Password must contain at least one uppercase letter' }, { status: 400 });
+      }
+      if (pwSettings.passwordRequireNumber && !/\d/.test(newPassword)) {
+        return NextResponse.json({ message: 'Password must contain at least one number' }, { status: 400 });
+      }
+      if (pwSettings.passwordRequireSpecial && !/[^a-zA-Z0-9]/.test(newPassword)) {
+        return NextResponse.json({ message: 'Password must contain at least one special character' }, { status: 400 });
+      }
+    }
 
     // Get full user with invite/server info
     const user = await prisma.user.findUnique({
@@ -52,6 +79,8 @@ export async function POST(request: NextRequest) {
       where: { id: user.id },
       data: { passwordHash: newHash },
     });
+
+    auditLog('user.password_changed', { username: user.username }, { actor: user.id });
 
     // Invalidate ALL sessions (including current) and issue a new one
     await prisma.userSession.deleteMany({
