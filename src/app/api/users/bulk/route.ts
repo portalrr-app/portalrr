@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { authenticateAdmin, isAuthError } from '@/lib/auth/admin';
 import { bulkUsersSchema, validateBody } from '@/lib/validation';
 import { decryptServerSecrets } from '@/lib/crypto';
+import { jellyfinUserUrl } from '@/lib/servers/jellyfin';
 import { logOnError } from '@/lib/logger';
 import { auditLog } from '@/lib/audit';
 
@@ -25,7 +26,13 @@ export async function POST(request: NextRequest) {
       const server = await prisma.server.findUnique({ where: { id: serverId } }).then(s => s ? decryptServerSecrets(s) : null);
       if (server?.type === 'jellyfin' && server.apiKey) {
         for (const remoteId of effectiveRemoteIds) {
-          await fetch(`${server.url}/Users/${remoteId}`, {
+          let url: string;
+          try {
+            url = jellyfinUserUrl(server.url, remoteId);
+          } catch {
+            continue;
+          }
+          await fetch(url, {
             method: 'DELETE',
             headers: { 'X-MediaBrowser-Token': server.apiKey },
           }).catch(logOnError('users/bulk:jellyfin-delete'));

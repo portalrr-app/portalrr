@@ -5,7 +5,8 @@ import bcrypt from 'bcryptjs';
 import { userLoginSchema, validateBody } from '@/lib/validation';
 import { checkRateLimit, RATE_LIMITS, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logOnError } from '@/lib/logger';
-import { decryptServerSecrets, generateSessionToken } from '@/lib/crypto';
+import { decryptServerSecrets, generateSessionToken, hashSessionToken } from '@/lib/crypto';
+import { randomBytes } from 'crypto';
 
 // Pre-hash for constant-time comparison when user not found (timing attack mitigation)
 const DUMMY_HASH = '$2a$12$x'.padEnd(60, '0');
@@ -146,9 +147,11 @@ async function createSession(user: { id: string; username: string; email: string
     where: { userId: user.id, expiresAt: { lt: new Date() } },
   }).catch(logOnError('account/login:session-cleanup'));
 
-  const session = await prisma.userSession.create({
+  const cookieToken = generateSessionToken();
+  await prisma.userSession.create({
     data: {
-      id: generateSessionToken(),
+      id: randomBytes(12).toString('hex'),
+      tokenHash: hashSessionToken(cookieToken),
       userId: user.id,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       ipAddress: request ? getClientIp(request) : null,
@@ -162,7 +165,7 @@ async function createSession(user: { id: string; username: string; email: string
     emailRequired: !user.email,
   });
 
-  response.cookies.set('user_session', session.id, {
+  response.cookies.set('user_session', cookieToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production' && process.env.INSECURE_COOKIES !== 'true',
     sameSite: 'lax',

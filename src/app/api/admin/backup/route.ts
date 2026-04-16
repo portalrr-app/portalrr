@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { authenticateAdmin, isAuthError } from '@/lib/auth/admin';
-import { importBackupSchema, validateBody } from '@/lib/validation';
+import {
+  importAnnouncementRowSchema,
+  importBackupSchema,
+  importEmailTemplateRowSchema,
+  importInviteRowSchema,
+  importServerRowSchema,
+  importUserRowSchema,
+  importWebhookRowSchema,
+  validateBody,
+} from '@/lib/validation';
 import { auditLog } from '@/lib/audit';
 import { sanitizeBackupSettings, stripHtml, isPublicUrl } from '@/lib/sanitize';
 
@@ -149,21 +158,25 @@ export async function POST(request: NextRequest) {
       if ((sections.includes('invites') || sections.includes('users')) && backupData.servers) {
         // Servers are a dependency for invites and users, so import them when those sections are selected
         try {
-          const serversData = backupData.servers as Array<Record<string, unknown>>;
+          const serversData = Array.isArray(backupData.servers) ? backupData.servers : [];
           if (mode === 'replace') {
             // Only delete servers that don't have dependent data outside the backup
             await tx.server.deleteMany();
           }
-          for (const server of serversData) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { token, apiKey, adminPassword, ...safeServer } = server;
+          for (const raw of serversData) {
+            const parsed = importServerRowSchema.safeParse(raw);
+            if (!parsed.success) {
+              errors.push(`servers: skipped invalid row (${parsed.error.issues[0]?.message || 'schema mismatch'})`);
+              continue;
+            }
+            const safeServer = { ...parsed.data, name: stripHtml(parsed.data.name) };
             if (mode === 'merge') {
-              const existing = await tx.server.findUnique({ where: { id: safeServer.id as string } });
+              const existing = await tx.server.findUnique({ where: { id: safeServer.id } });
               if (!existing) {
-                await tx.server.create({ data: safeServer as Parameters<typeof tx.server.create>[0]['data'] });
+                await tx.server.create({ data: safeServer });
               }
             } else {
-              await tx.server.create({ data: safeServer as Parameters<typeof tx.server.create>[0]['data'] });
+              await tx.server.create({ data: safeServer });
             }
           }
           imported.push('servers');
@@ -175,18 +188,31 @@ export async function POST(request: NextRequest) {
       // Invites
       if (sections.includes('invites') && backupData.invites) {
         try {
-          const invitesData = backupData.invites as Array<Record<string, unknown>>;
+          const invitesData = Array.isArray(backupData.invites) ? backupData.invites : [];
           if (mode === 'replace') {
             await tx.invite.deleteMany();
           }
-          for (const invite of invitesData) {
+          for (const raw of invitesData) {
+            const parsed = importInviteRowSchema.safeParse(raw);
+            if (!parsed.success) {
+              errors.push(`invites: skipped invalid row (${parsed.error.issues[0]?.message || 'schema mismatch'})`);
+              continue;
+            }
+            const safeInvite = {
+              ...parsed.data,
+              createdBy: stripHtml(parsed.data.createdBy || ''),
+              label: parsed.data.label ? stripHtml(parsed.data.label) : parsed.data.label,
+              expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : parsed.data.expiresAt,
+              accessUntil: parsed.data.accessUntil ? new Date(parsed.data.accessUntil) : parsed.data.accessUntil,
+              createdAt: parsed.data.createdAt ? new Date(parsed.data.createdAt) : undefined,
+            };
             if (mode === 'merge') {
-              const existing = await tx.invite.findUnique({ where: { id: invite.id as string } });
+              const existing = await tx.invite.findUnique({ where: { id: safeInvite.id } });
               if (!existing) {
-                await tx.invite.create({ data: invite as Parameters<typeof tx.invite.create>[0]['data'] });
+                await tx.invite.create({ data: safeInvite });
               }
             } else {
-              await tx.invite.create({ data: invite as Parameters<typeof tx.invite.create>[0]['data'] });
+              await tx.invite.create({ data: safeInvite });
             }
           }
           imported.push('invites');
@@ -198,33 +224,45 @@ export async function POST(request: NextRequest) {
       // Users
       if (sections.includes('users') && backupData.users) {
         try {
-          const usersData = backupData.users as Array<Record<string, unknown>>;
+          const usersData = Array.isArray(backupData.users) ? backupData.users : [];
           if (mode === 'replace') {
             await tx.userSession.deleteMany();
             await tx.passwordResetToken.deleteMany();
             await tx.user.deleteMany();
           }
-          for (const user of usersData) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { passwordHash, sessions, passwordResetTokens, ...rawUser } = user;
-            // Sanitize text fields to prevent stored XSS
-            const safeUser = { ...rawUser };
-            if (typeof safeUser.username === 'string') safeUser.username = stripHtml(safeUser.username);
-            if (typeof safeUser.notes === 'string') safeUser.notes = stripHtml(safeUser.notes);
-            if (typeof safeUser.discordUsername === 'string') safeUser.discordUsername = stripHtml(safeUser.discordUsername);
-            if (typeof safeUser.telegramUsername === 'string') safeUser.telegramUsername = stripHtml(safeUser.telegramUsername);
+          for (const raw of usersData) {
+            const parsed = importUserRowSchema.safeParse(raw);
+            if (!parsed.success) {
+              errors.push(`users: skipped invalid row (${parsed.error.issues[0]?.message || 'schema mismatch'})`);
+              continue;
+            }
+            const p = parsed.data;
+            const safeUser = {
+              ...p,
+              username: stripHtml(p.username),
+              notes: p.notes ? stripHtml(p.notes) : p.notes,
+              discordUsername: p.discordUsername ? stripHtml(p.discordUsername) : p.discordUsername,
+              telegramUsername: p.telegramUsername ? stripHtml(p.telegramUsername) : p.telegramUsername,
+              disabledReason: p.disabledReason ? stripHtml(p.disabledReason) : p.disabledReason,
+              accessUntil: p.accessUntil ? new Date(p.accessUntil) : p.accessUntil,
+              disabledAt: p.disabledAt ? new Date(p.disabledAt) : p.disabledAt,
+              createdAt: p.createdAt ? new Date(p.createdAt) : undefined,
+              passwordHash: '',
+            };
             if (mode === 'merge') {
-              const existingById = await tx.user.findUnique({ where: { id: safeUser.id as string } });
+              const existingById = await tx.user.findUnique({ where: { id: safeUser.id } });
               if (!existingById) {
                 // Also check for unique constraint conflicts
-                const existingByEmail = await tx.user.findUnique({ where: { email: safeUser.email as string } });
-                const existingByUsername = await tx.user.findUnique({ where: { username: safeUser.username as string } });
+                const existingByEmail = safeUser.email
+                  ? await tx.user.findUnique({ where: { email: safeUser.email } })
+                  : null;
+                const existingByUsername = await tx.user.findUnique({ where: { username: safeUser.username } });
                 if (!existingByEmail && !existingByUsername) {
-                  await tx.user.create({ data: { ...safeUser, passwordHash: '' } as Parameters<typeof tx.user.create>[0]['data'] });
+                  await tx.user.create({ data: safeUser });
                 }
               }
             } else {
-              await tx.user.create({ data: { ...safeUser, passwordHash: '' } as Parameters<typeof tx.user.create>[0]['data'] });
+              await tx.user.create({ data: safeUser });
             }
           }
           imported.push('users');
@@ -236,26 +274,34 @@ export async function POST(request: NextRequest) {
       // Webhooks
       if (sections.includes('webhooks') && backupData.webhooks) {
         try {
-          const webhooksData = backupData.webhooks as Array<Record<string, unknown>>;
+          const webhooksData = Array.isArray(backupData.webhooks) ? backupData.webhooks : [];
           if (mode === 'replace') {
             await tx.webhook.deleteMany();
           }
-          for (const webhook of webhooksData) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { secret, ...safeWebhook } = webhook;
-            // Block webhooks with private/internal URLs (SSRF prevention)
-            if (typeof safeWebhook.url === 'string' && !isPublicUrl(safeWebhook.url)) {
-              errors.push(`webhook: blocked private URL ${safeWebhook.name || safeWebhook.url}`);
+          for (const raw of webhooksData) {
+            const parsed = importWebhookRowSchema.safeParse(raw);
+            if (!parsed.success) {
+              errors.push(`webhooks: skipped invalid row (${parsed.error.issues[0]?.message || 'schema mismatch'})`);
               continue;
             }
-            if (typeof safeWebhook.name === 'string') safeWebhook.name = stripHtml(safeWebhook.name);
+            const p = parsed.data;
+            if (!isPublicUrl(p.url)) {
+              errors.push(`webhook: blocked private URL ${p.name || p.url}`);
+              continue;
+            }
+            const safeWebhook = {
+              ...p,
+              name: stripHtml(p.name),
+              template: p.template ? stripHtml(p.template) : p.template,
+              createdAt: p.createdAt ? new Date(p.createdAt) : undefined,
+            };
             if (mode === 'merge') {
-              const existing = await tx.webhook.findUnique({ where: { id: safeWebhook.id as string } });
+              const existing = await tx.webhook.findUnique({ where: { id: safeWebhook.id } });
               if (!existing) {
-                await tx.webhook.create({ data: safeWebhook as Parameters<typeof tx.webhook.create>[0]['data'] });
+                await tx.webhook.create({ data: safeWebhook });
               }
             } else {
-              await tx.webhook.create({ data: safeWebhook as Parameters<typeof tx.webhook.create>[0]['data'] });
+              await tx.webhook.create({ data: safeWebhook });
             }
           }
           imported.push('webhooks');
@@ -267,18 +313,30 @@ export async function POST(request: NextRequest) {
       // Email templates
       if (sections.includes('emailTemplates') && backupData.emailTemplates) {
         try {
-          const templatesData = backupData.emailTemplates as Array<Record<string, unknown>>;
+          const templatesData = Array.isArray(backupData.emailTemplates) ? backupData.emailTemplates : [];
           if (mode === 'replace') {
             await tx.emailTemplate.deleteMany();
           }
-          for (const template of templatesData) {
+          for (const raw of templatesData) {
+            const parsed = importEmailTemplateRowSchema.safeParse(raw);
+            if (!parsed.success) {
+              errors.push(`emailTemplates: skipped invalid row (${parsed.error.issues[0]?.message || 'schema mismatch'})`);
+              continue;
+            }
+            const p = parsed.data;
+            const safeTemplate = {
+              ...p,
+              subject: stripHtml(p.subject),
+              createdAt: p.createdAt ? new Date(p.createdAt) : undefined,
+              updatedAt: p.updatedAt ? new Date(p.updatedAt) : undefined,
+            };
             if (mode === 'merge') {
-              const existing = await tx.emailTemplate.findUnique({ where: { id: template.id as string } });
+              const existing = await tx.emailTemplate.findUnique({ where: { id: safeTemplate.id } });
               if (!existing) {
-                await tx.emailTemplate.create({ data: template as Parameters<typeof tx.emailTemplate.create>[0]['data'] });
+                await tx.emailTemplate.create({ data: safeTemplate });
               }
             } else {
-              await tx.emailTemplate.create({ data: template as Parameters<typeof tx.emailTemplate.create>[0]['data'] });
+              await tx.emailTemplate.create({ data: safeTemplate });
             }
           }
           imported.push('emailTemplates');
@@ -290,18 +348,30 @@ export async function POST(request: NextRequest) {
       // Announcements
       if (sections.includes('announcements') && backupData.announcements) {
         try {
-          const announcementsData = backupData.announcements as Array<Record<string, unknown>>;
+          const announcementsData = Array.isArray(backupData.announcements) ? backupData.announcements : [];
           if (mode === 'replace') {
             await tx.announcement.deleteMany();
           }
-          for (const announcement of announcementsData) {
+          for (const raw of announcementsData) {
+            const parsed = importAnnouncementRowSchema.safeParse(raw);
+            if (!parsed.success) {
+              errors.push(`announcements: skipped invalid row (${parsed.error.issues[0]?.message || 'schema mismatch'})`);
+              continue;
+            }
+            const p = parsed.data;
+            const safeAnnouncement = {
+              ...p,
+              title: stripHtml(p.title),
+              sentBy: stripHtml(p.sentBy),
+              createdAt: p.createdAt ? new Date(p.createdAt) : undefined,
+            };
             if (mode === 'merge') {
-              const existing = await tx.announcement.findUnique({ where: { id: announcement.id as string } });
+              const existing = await tx.announcement.findUnique({ where: { id: safeAnnouncement.id } });
               if (!existing) {
-                await tx.announcement.create({ data: announcement as Parameters<typeof tx.announcement.create>[0]['data'] });
+                await tx.announcement.create({ data: safeAnnouncement });
               }
             } else {
-              await tx.announcement.create({ data: announcement as Parameters<typeof tx.announcement.create>[0]['data'] });
+              await tx.announcement.create({ data: safeAnnouncement });
             }
           }
           imported.push('announcements');

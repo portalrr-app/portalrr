@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { authenticateUser, isUserAuthError } from '@/lib/auth/user';
-import { changePasswordSchema, validateBody } from '@/lib/validation';
+import { changePasswordSchema, checkPasswordPolicy, validateBody } from '@/lib/validation';
 import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { getJellyfinAuthToken, changeJellyfinPassword, findJellyfinUserByName } from '@/lib/servers/jellyfin';
-import { decryptServerSecrets, generateSessionToken } from '@/lib/crypto';
+import { decryptServerSecrets, generateSessionToken, hashSessionToken } from '@/lib/crypto';
+import { randomBytes } from 'crypto';
 import { auditLog } from '@/lib/audit';
 
 export async function POST(request: NextRequest) {
@@ -33,20 +34,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (pwSettings) {
-      const minLen = pwSettings.passwordMinLength || 8;
-      if (newPassword.length < minLen) {
-        return NextResponse.json({ message: `Password must be at least ${minLen} characters` }, { status: 400 });
-      }
-      if (pwSettings.passwordRequireUppercase && !/[A-Z]/.test(newPassword)) {
-        return NextResponse.json({ message: 'Password must contain at least one uppercase letter' }, { status: 400 });
-      }
-      if (pwSettings.passwordRequireNumber && !/\d/.test(newPassword)) {
-        return NextResponse.json({ message: 'Password must contain at least one number' }, { status: 400 });
-      }
-      if (pwSettings.passwordRequireSpecial && !/[^a-zA-Z0-9]/.test(newPassword)) {
-        return NextResponse.json({ message: 'Password must contain at least one special character' }, { status: 400 });
-      }
+    const policyError = checkPasswordPolicy(newPassword, pwSettings);
+    if (policyError) {
+      return NextResponse.json({ message: policyError }, { status: 400 });
     }
 
     // Get full user with invite/server info
@@ -87,9 +77,11 @@ export async function POST(request: NextRequest) {
       where: { userId: user.id },
     });
 
-    const newSession = await prisma.userSession.create({
+    const newCookieToken = generateSessionToken();
+    await prisma.userSession.create({
       data: {
-        id: generateSessionToken(),
+        id: randomBytes(12).toString('hex'),
+        tokenHash: hashSessionToken(newCookieToken),
         userId: user.id,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },
@@ -153,7 +145,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Set the new rotated session cookie
-    response.cookies.set('user_session', newSession.id, {
+    response.cookies.set('user_session', newCookieToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production' && process.env.INSECURE_COOKIES !== 'true',
       sameSite: 'lax',

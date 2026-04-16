@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { authenticateAdmin, isAuthError } from '@/lib/auth/admin';
 import { recreateUserSchema, validateBody } from '@/lib/validation';
 import { decryptServerSecrets } from '@/lib/crypto';
+import { jellyfinUserUrl } from '@/lib/servers/jellyfin';
 import { auditLog } from '@/lib/audit';
 import { sendTemplatedEmail } from '@/lib/notifications/email-templates';
 import { randomBytes } from 'crypto';
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest) {
       // Apply library access from the user's existing config
       const libraries: string[] = JSON.parse(user.libraries || '[]');
       if (remoteUserId && libraries.length > 0) {
-        await fetch(`${server.url}/Users/${remoteUserId}/Policy`, {
+        await fetch(jellyfinUserUrl(server.url, remoteUserId, 'Policy'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -63,11 +63,34 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'SMTP connection verified successfully' });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : 'Unknown error';
-    console.error('SMTP test failed:', msg);
+    console.error('SMTP test failed:', error);
+    const code = (error as { code?: string })?.code;
+    const userMessage = friendlySmtpError(code);
     return NextResponse.json(
-      { success: false, message: `SMTP test failed: ${msg}` },
+      { success: false, message: userMessage, code: code || null },
       { status: 400 }
     );
+  }
+}
+
+function friendlySmtpError(code: string | undefined): string {
+  switch (code) {
+    case 'EAUTH':
+      return 'SMTP authentication failed — check username and password.';
+    case 'ECONNECTION':
+    case 'ECONNREFUSED':
+      return 'SMTP connection refused — check host and port.';
+    case 'ETIMEDOUT':
+    case 'ETIME':
+      return 'SMTP connection timed out — check host, port, and firewall rules.';
+    case 'ENOTFOUND':
+    case 'EDNS':
+      return 'SMTP host could not be resolved — check the hostname.';
+    case 'ESOCKET':
+      return 'SMTP socket error — check TLS settings for this port.';
+    case 'EENVELOPE':
+      return 'SMTP rejected the sender or recipient address.';
+    default:
+      return 'SMTP test failed. See server logs for details.';
   }
 }

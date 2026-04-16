@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { authenticateAdmin, isAuthError } from '@/lib/auth/admin';
-import { adminResetPasswordSchema, validateBody } from '@/lib/validation';
+import { adminResetPasswordSchema, checkPasswordPolicy, validateBody } from '@/lib/validation';
 import { getJellyfinAuthToken, changeJellyfinPassword, findJellyfinUserByName } from '@/lib/servers/jellyfin';
 import { decryptServerSecrets } from '@/lib/crypto';
 import { auditLog } from '@/lib/audit';
@@ -22,6 +22,19 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) return parsed.response;
 
     const { userId, localId, remoteUserId, newPassword, source, serverId } = parsed.data;
+
+    const pwSettings = await prisma.settings.findFirst({
+      select: {
+        passwordMinLength: true,
+        passwordRequireUppercase: true,
+        passwordRequireNumber: true,
+        passwordRequireSpecial: true,
+      },
+    });
+    const policyError = checkPasswordPolicy(newPassword, pwSettings);
+    if (policyError) {
+      return NextResponse.json({ message: policyError }, { status: 400 });
+    }
 
     // For local/Portalrr users, update the local password
     if (source === 'local') {

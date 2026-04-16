@@ -128,9 +128,9 @@ describe('crypto', () => {
   });
 
   describe('generateInviteCode', () => {
-    it('returns a 10-char uppercase hex string', () => {
+    it('returns a 32-char uppercase hex string (128 bits)', () => {
       const code = generateInviteCode();
-      expect(code).toMatch(/^[0-9A-F]{10}$/);
+      expect(code).toMatch(/^[0-9A-F]{32}$/);
     });
 
     it('generates unique codes', () => {

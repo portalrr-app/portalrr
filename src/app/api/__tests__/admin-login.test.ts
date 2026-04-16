@@ -27,6 +27,7 @@ vi.mock('@/lib/crypto', () => ({
   decrypt: (s: string) => s,
   decryptServerSecrets: <T>(s: T) => s,
   generateSessionToken: () => 'mock-session-token',
+  hashSessionToken: (s: string) => `hash:${s}`,
 }));
 vi.mock('@/lib/audit', () => ({ auditLog: vi.fn() }));
 vi.mock('@/lib/notifications/webhooks', () => ({ dispatchWebhook: vi.fn() }));
@@ -130,7 +131,10 @@ describe('POST /api/admin/login', () => {
     expect(res.status).toBe(401);
   });
 
-  it('returns 423 for locked account', async () => {
+  it('returns generic 401 for a locked account (no enumeration leak)', async () => {
+    // Previously returned 423 with "Account locked" — that let an attacker
+    // enumerate which usernames exist. We now return the same 401 "Invalid
+    // credentials" as for a wrong password, and still audit-log the lockout.
     mockPrisma.admin.count.mockResolvedValue(1);
     mockPrisma.admin.findUnique.mockResolvedValue({
       id: 'admin-1',
@@ -141,15 +145,15 @@ describe('POST /api/admin/login', () => {
       totpEnabled: false,
       totpSecret: null,
     });
+    mockBcrypt.compare.mockResolvedValue(false);
 
     const req = loginRequest({ username: 'admin', password: 'password123' });
 
     const res = await POST(req);
     const body = await jsonBody(res);
 
-    expect(res.status).toBe(423);
-    expect(body.message).toContain('locked');
-    expect(res.headers.get('Retry-After')).toBeDefined();
+    expect(res.status).toBe(401);
+    expect(body.message).toMatch(/Invalid credentials/i);
   });
 
   it('returns 403 with totpRequired when 2FA is enabled', async () => {

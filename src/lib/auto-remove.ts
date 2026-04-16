@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { sendTemplatedEmail } from '@/lib/notifications/email-templates';
 import { decryptServerSecrets } from '@/lib/crypto';
+import { jellyfinUserUrl } from '@/lib/servers/jellyfin';
 import { dispatchWebhook } from '@/lib/notifications/webhooks';
 
 let lastRun = 0;
@@ -214,7 +215,7 @@ async function removeFromServer(
     );
     if (!match) return;
 
-    const delRes = await fetch(`${server.url}/Users/${match.Id}`, {
+    const delRes = await fetch(jellyfinUserUrl(server.url, match.Id), {
       method: 'DELETE',
       headers: { 'X-MediaBrowser-Token': server.apiKey },
       signal: AbortSignal.timeout(15000),

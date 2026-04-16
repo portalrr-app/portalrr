@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkRateLimit, RATE_LIMITS, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { logOnError } from '@/lib/logger';
+import { hashSessionToken } from '@/lib/crypto';
 
 function unauthorized() {
   return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
@@ -15,13 +16,13 @@ function unauthorized() {
 export async function authenticateAdmin(
   request: NextRequest
 ): Promise<{ admin: { id: string; username: string; source: string } } | NextResponse> {
-  const sessionId = request.cookies.get('admin_session')?.value;
+  const token = request.cookies.get('admin_session')?.value;
 
-  if (!sessionId) return unauthorized();
+  if (!token) return unauthorized();
 
   try {
     const session = await prisma.adminSession.findUnique({
-      where: { id: sessionId },
+      where: { tokenHash: hashSessionToken(token) },
       include: { admin: { select: { id: true, username: true, source: true } } },
     });
 

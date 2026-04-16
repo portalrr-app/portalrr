@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { registerSchema, validateBody } from '@/lib/validation';
+import { checkPasswordPolicy, registerSchema, validateBody } from '@/lib/validation';
 import { checkRateLimit, RATE_LIMITS, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { decryptServerSecrets } from '@/lib/crypto';
-import { verifyCaptchaSignature } from '@/app/api/captcha/route';
+import { jellyfinUserUrl } from '@/lib/servers/jellyfin';
+import { consumeCaptcha } from '@/app/api/captcha/route';
 import { dispatchWebhook } from '@/lib/notifications/webhooks';
 import { sendTemplatedEmail } from '@/lib/notifications/email-templates';
 import { auditLog } from '@/lib/audit';
@@ -37,28 +38,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Validate password against customizable rules
-    if (settings) {
-      const minLen = settings.passwordMinLength || 8;
-      if (password.length < minLen) {
-        return NextResponse.json({ message: `Password must be at least ${minLen} characters` }, { status: 400 });
-      }
-      if (settings.passwordRequireUppercase && !/[A-Z]/.test(password)) {
-        return NextResponse.json({ message: 'Password must contain at least one uppercase letter' }, { status: 400 });
-      }
-      if (settings.passwordRequireNumber && !/\d/.test(password)) {
-        return NextResponse.json({ message: 'Password must contain at least one number' }, { status: 400 });
-      }
-      if (settings.passwordRequireSpecial && !/[^a-zA-Z0-9]/.test(password)) {
-        return NextResponse.json({ message: 'Password must contain at least one special character' }, { status: 400 });
-      }
+    const policyError = checkPasswordPolicy(password, settings);
+    if (policyError) {
+      return NextResponse.json({ message: policyError }, { status: 400 });
     }
 
     if (settings?.captchaEnabled) {
       const scope = `register-${code.toUpperCase()}`;
       const storedSignature = request.cookies.get(`portalrr_captcha_${scope}`)?.value;
       const userAnswer = String(parsed.data.captchaAnswer ?? '').trim();
-      if (!storedSignature || !userAnswer || !verifyCaptchaSignature(userAnswer, scope, storedSignature)) {
+      if (!storedSignature || !userAnswer || !consumeCaptcha(userAnswer, scope, storedSignature)) {
         return NextResponse.json(
           { message: 'Captcha verification failed' },
           { status: 400 }
@@ -217,7 +206,7 @@ export async function POST(request: NextRequest) {
       if (server && remoteUserId) {
         try {
           if (server.type === 'jellyfin' && server.apiKey) {
-            await fetch(`${server.url}/Users/${remoteUserId}`, {
+            await fetch(jellyfinUserUrl(server.url, remoteUserId), {
               method: 'DELETE',
               headers: { 'X-MediaBrowser-Token': server.apiKey },
               signal: AbortSignal.timeout(10000),
@@ -380,7 +369,7 @@ async function createJellyfinUser(jellyfinUrl: string, apiKey: string, username:
 
   // Apply library restrictions if specified
   if (libraries.length > 0 && userId) {
-    const policyRes = await fetch(`${jellyfinUrl}/Users/${userId}/Policy`, {
+    const policyRes = await fetch(jellyfinUserUrl(jellyfinUrl, userId, 'Policy'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -31,15 +31,23 @@ describe('loginSchema', () => {
 
 describe('setupSchema', () => {
   it('accepts valid setup', () => {
-    expect(setupSchema.safeParse({ username: 'admin', password: 'longpassword' }).success).toBe(true);
+    expect(setupSchema.safeParse({ username: 'admin', password: 'LongPassword42' }).success).toBe(true);
   });
 
   it('rejects short username', () => {
-    expect(setupSchema.safeParse({ username: 'ab', password: 'longpassword' }).success).toBe(false);
+    expect(setupSchema.safeParse({ username: 'ab', password: 'LongPassword42' }).success).toBe(false);
   });
 
   it('rejects short password', () => {
     expect(setupSchema.safeParse({ username: 'admin', password: 'short' }).success).toBe(false);
+  });
+
+  it('rejects password without a digit (bootstrap admin policy)', () => {
+    expect(setupSchema.safeParse({ username: 'admin', password: 'alphabetsonly' }).success).toBe(false);
+  });
+
+  it('rejects password without a letter (bootstrap admin policy)', () => {
+    expect(setupSchema.safeParse({ username: 'admin', password: '123456789012' }).success).toBe(false);
   });
 });
 

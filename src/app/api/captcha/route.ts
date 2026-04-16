@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { randomInt, createHmac } from 'crypto';
+import { randomInt, createHmac, randomBytes, timingSafeEqual } from 'crypto';
 
 const NUMBER_WORDS = [
   'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
@@ -14,13 +14,63 @@ const OPERATION_WORDS: Record<string, string[]> = {
   times: ['times', 'multiplied by'],
 };
 
-function signAnswer(answer: string, scope: string): string {
-  const secret = process.env.CAPTCHA_SECRET || process.env.ENCRYPTION_KEY || 'portalrr-captcha-dev-only';
-  return createHmac('sha256', secret).update(`${scope}:${answer}`).digest('hex');
+// Ephemeral per-process secret used when no deployment secret is configured.
+// Prevents signature forgery from leaking source — still dev-only, but at least
+// unpredictable across process restarts.
+const EPHEMERAL_CAPTCHA_SECRET = randomBytes(32).toString('hex');
+
+function getCaptchaSecret(): string {
+  return process.env.CAPTCHA_SECRET || process.env.ENCRYPTION_KEY || EPHEMERAL_CAPTCHA_SECRET;
 }
 
+function signAnswer(answer: string, scope: string): string {
+  return createHmac('sha256', getCaptchaSecret()).update(`${scope}:${answer}`).digest('hex');
+}
+
+// Single-use token store: map signature -> expiry epoch ms.
+// Once a captcha is verified it is consumed and cannot be replayed within the
+// cookie's 10-minute TTL.
+const consumedCaptchas = new Map<string, number>();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [sig, expiry] of consumedCaptchas.entries()) {
+    if (expiry <= now) consumedCaptchas.delete(sig);
+  }
+}, 60_000).unref?.();
+
+function hexEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(a, 'hex'), Buffer.from(b, 'hex'));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Verify and consume a captcha signature.
+ * Returns true on the first successful verification; subsequent calls with the
+ * same signature return false even if the answer still matches.
+ */
+export function consumeCaptcha(answer: string, scope: string, signature: string): boolean {
+  const expected = signAnswer(answer, scope);
+  if (!hexEqual(expected, signature)) return false;
+
+  const now = Date.now();
+  const existing = consumedCaptchas.get(signature);
+  if (existing && existing > now) return false;
+
+  consumedCaptchas.set(signature, now + 10 * 60 * 1000);
+  return true;
+}
+
+/**
+ * Backwards-compatible signature verifier (does not consume).
+ * @deprecated prefer consumeCaptcha — replay-safe
+ */
 export function verifyCaptchaSignature(answer: string, scope: string, signature: string): boolean {
-  return signAnswer(answer, scope) === signature;
+  return hexEqual(signAnswer(answer, scope), signature);
 }
 
 export async function GET(request: NextRequest) {

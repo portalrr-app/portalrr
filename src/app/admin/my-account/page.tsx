@@ -92,14 +92,15 @@ export default function MyAccountPage() {
   const handleSetup2FA = async () => {
     setTotpLoading(true);
     try {
-      const res = await fetch('/api/admin/2fa', { method: 'GET' });
+      const res = await fetch('/api/admin/2fa', { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
         setOtpauthUri(data.otpauthUri);
         setTotpSecret(data.secret);
         setShowSetupModal(true);
       } else {
-        toastError('Failed to start 2FA setup');
+        const data = await res.json().catch(() => ({}));
+        toastError(data.message || 'Failed to start 2FA setup');
       }
     } catch {
       toastError('Failed to start 2FA setup');

@@ -21,6 +21,11 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
+    // s.id is an opaque random identifier — the actual session cookie value is
+    // only stored server-side as a sha256 hash in s.tokenHash and is never
+    // returned by this endpoint. The id is safe to expose because it's only
+    // used to address the session row (e.g. for revocation via DELETE) and
+    // cannot be replayed as a cookie.
     const sessions = [
       ...adminSessions.map((s) => ({
         id: s.id,

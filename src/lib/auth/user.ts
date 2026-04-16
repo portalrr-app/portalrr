@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logOnError } from '@/lib/logger';
+import { hashSessionToken } from '@/lib/crypto';
 
 function unauthorized() {
   return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
@@ -9,13 +10,13 @@ function unauthorized() {
 export async function authenticateUser(
   request: NextRequest
 ): Promise<{ user: { id: string; username: string; email: string | null; inviteId: string | null } } | NextResponse> {
-  const sessionId = request.cookies.get('user_session')?.value;
+  const token = request.cookies.get('user_session')?.value;
 
-  if (!sessionId) return unauthorized();
+  if (!token) return unauthorized();
 
   try {
     const session = await prisma.userSession.findUnique({
-      where: { id: sessionId },
+      where: { tokenHash: hashSessionToken(token) },
       include: { user: { select: { id: true, username: true, email: true, inviteId: true, accessUntil: true } } },
     });
 

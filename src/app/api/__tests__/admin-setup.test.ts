@@ -20,6 +20,7 @@ const { mockPrisma } = vi.hoisted(() => {
 vi.mock('@/lib/prisma', () => ({ prisma: mockPrisma }));
 vi.mock('@/lib/crypto', () => ({
   generateSessionToken: () => 'mock-session-token-abc123',
+  hashSessionToken: (s: string) => `hash:${s}`,
 }));
 vi.mock('bcryptjs', () => ({
   default: { hash: vi.fn().mockResolvedValue('hashed-password') },

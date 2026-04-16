@@ -111,6 +111,7 @@ model UserServer {
 
 model UserSession {
   id        String   @id
+  tokenHash String   @unique
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
@@ -120,6 +121,7 @@ model UserSession {
 
   @@index([userId])
   @@index([expiresAt])
+  @@index([tokenHash])
 }
 
 model Settings {
@@ -246,6 +248,7 @@ model Admin {
 
 model AdminSession {
   id        String   @id
+  tokenHash String   @unique
   adminId   String
   admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
   expiresAt DateTime
@@ -255,6 +258,7 @@ model AdminSession {
 
   @@index([adminId])
   @@index([expiresAt])
+  @@index([tokenHash])
 }
 
 // Persistent audit log (replaces stdout-only logging)

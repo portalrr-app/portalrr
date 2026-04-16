@@ -1,13 +1,15 @@
 import { prisma } from '@/lib/prisma';
 import type { NextRequest } from 'next/server';
 import { logOnError } from '@/lib/logger';
+import { hashSessionToken } from '@/lib/crypto';
 
 export async function validateSession(request: NextRequest) {
-  const sessionId = request.cookies.get('admin_session')?.value;
-  if (!sessionId) return null;
+  const token = request.cookies.get('admin_session')?.value;
+  if (!token) return null;
 
+  const tokenHash = hashSessionToken(token);
   const session = await prisma.adminSession.findUnique({
-    where: { id: sessionId },
+    where: { tokenHash },
     include: { admin: true },
   });
 

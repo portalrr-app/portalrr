@@ -8,6 +8,33 @@ const CLIENT_HEADERS = {
   'X-Emby-Authorization': 'MediaBrowser Client="Portalrr", Device="Server", DeviceId="portalrr-server", Version="1.0.0"',
 };
 
+/**
+ * Jellyfin user IDs are always GUIDs ("3e9c0d1a-..." or the 32-hex compact form).
+ * Reject anything outside that shape before interpolating into URL paths to
+ * block path-traversal (`../Something`) from anywhere an id is passed in from
+ * client input (bulk delete, admin import, etc.).
+ */
+const JELLYFIN_USER_ID_RE = /^[A-Za-z0-9-]{1,64}$/;
+
+export function assertJellyfinUserId(id: string): string {
+  if (!JELLYFIN_USER_ID_RE.test(id)) {
+    throw new Error('Invalid Jellyfin user id');
+  }
+  return id;
+}
+
+/**
+ * Build a URL that targets a specific Jellyfin user (e.g. `/Users/{id}` or
+ * `/Users/{id}/Policy`). Validates the id shape and URL-encodes it to prevent
+ * path traversal / header injection.
+ */
+export function jellyfinUserUrl(serverUrl: string, userId: string, suffix = ''): string {
+  assertJellyfinUserId(userId);
+  const trimmedBase = serverUrl.replace(/\/+$/, '');
+  const trimmedSuffix = suffix.startsWith('/') ? suffix : suffix ? `/${suffix}` : '';
+  return `${trimmedBase}/Users/${encodeURIComponent(userId)}${trimmedSuffix}`;
+}
+
 export async function getJellyfinAuthToken(
   serverUrl: string,
   adminUsername: string,
@@ -39,7 +66,7 @@ export async function changeJellyfinPassword(
   jellyfinUserId: string,
   newPassword: string
 ): Promise<void> {
-  const res = await fetch(`${serverUrl}/Users/${jellyfinUserId}/Password`, {
+  const res = await fetch(jellyfinUserUrl(serverUrl, jellyfinUserId, 'Password'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -62,7 +89,7 @@ export async function resetJellyfinPassword(
   authToken: string,
   jellyfinUserId: string
 ): Promise<void> {
-  const res = await fetch(`${serverUrl}/Users/${jellyfinUserId}/Password`, {
+  const res = await fetch(jellyfinUserUrl(serverUrl, jellyfinUserId, 'Password'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

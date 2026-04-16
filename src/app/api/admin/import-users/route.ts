@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { authenticateAdmin, isAuthError } from '@/lib/auth/admin';
 import { importUsersSchema, validateBody } from '@/lib/validation';
 import { decryptServerSecrets } from '@/lib/crypto';
+import { jellyfinUserUrl } from '@/lib/servers/jellyfin';
 import { auditLog } from '@/lib/audit';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
@@ -132,7 +133,13 @@ async function fetchJellyfinUser(
   apiKey: string,
   userId: string
 ): Promise<{ username: string; email?: string } | null> {
-  const res = await fetch(`${serverUrl}/Users/${userId}`, {
+  let url: string;
+  try {
+    url = jellyfinUserUrl(serverUrl, userId);
+  } catch {
+    return null;
+  }
+  const res = await fetch(url, {
     headers: { 'X-MediaBrowser-Token': apiKey },
   });
 

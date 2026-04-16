@@ -101,17 +101,20 @@ describe('getClientIp', () => {
     }
   });
 
-  it('ignores x-forwarded-for and x-real-ip when TRUSTED_PROXY_COUNT is not set', () => {
+  it('falls back to best-effort x-forwarded-for when TRUSTED_PROXY_COUNT is not set', () => {
     delete process.env.TRUSTED_PROXY_COUNT;
     const req = makeRequest({ 'x-forwarded-for': '1.2.3.4', 'x-real-ip': '5.5.5.5' });
-    // Should not trust any client-supplied headers without trusted proxies
-    expect(getClientIp(req)).toBe('127.0.0.1');
+    // Without a trusted proxy config we still need *some* dimension to spread
+    // rate-limit buckets across. Using the header is spoofable, but strictly
+    // better than the old single-bucket fallback that let one client DoS
+    // everyone else. Operators should set TRUSTED_PROXY_COUNT for correctness.
+    expect(getClientIp(req)).toBe('1.2.3.4');
   });
 
-  it('ignores x-forwarded-for when TRUSTED_PROXY_COUNT is 0', () => {
+  it('falls back to best-effort x-forwarded-for when TRUSTED_PROXY_COUNT is 0', () => {
     process.env.TRUSTED_PROXY_COUNT = '0';
     const req = makeRequest({ 'x-forwarded-for': '1.2.3.4' });
-    expect(getClientIp(req)).toBe('127.0.0.1');
+    expect(getClientIp(req)).toBe('1.2.3.4');
   });
 
   it('extracts correct client IP with TRUSTED_PROXY_COUNT=1', () => {
@@ -135,29 +138,24 @@ describe('getClientIp', () => {
     expect(getClientIp(req)).toBe('203.0.113.50');
   });
 
-  it('trusts x-real-ip when TRUSTED_PROXY_COUNT is set', () => {
+  it('trusts x-real-ip when TRUSTED_PROXY_COUNT is set and x-forwarded-for missing', () => {
     process.env.TRUSTED_PROXY_COUNT = '1';
     const req = makeRequest({ 'x-real-ip': '1.2.3.4' });
     expect(getClientIp(req)).toBe('1.2.3.4');
   });
 
-  it('ignores x-real-ip when TRUSTED_PROXY_COUNT is not set', () => {
+  it('falls back to best-effort x-real-ip when TRUSTED_PROXY_COUNT is not set', () => {
     delete process.env.TRUSTED_PROXY_COUNT;
     const req = makeRequest({ 'x-real-ip': '1.2.3.4' });
-    expect(getClientIp(req)).toBe('127.0.0.1');
+    expect(getClientIp(req)).toBe('1.2.3.4');
   });
 
-  it('falls back to 127.0.0.1 when no headers present', () => {
-    const req = makeRequest({});
-    expect(getClientIp(req)).toBe('127.0.0.1');
-  });
-
-  it('prevents spoofing without TRUSTED_PROXY_COUNT', () => {
-    delete process.env.TRUSTED_PROXY_COUNT;
-    // Attacker sends fake x-forwarded-for directly to the app
-    const req = makeRequest({ 'x-forwarded-for': 'fake-ip' });
-    // Should NOT trust it
-    expect(getClientIp(req)).toBe('127.0.0.1');
+  it('falls back to a user-agent-keyed bucket when no ip headers present', () => {
+    const req = makeRequest({ 'user-agent': 'curl/8.0' });
+    // Not '127.0.0.1' anymore — at least bucketing by UA spreads load across
+    // clients so a single bad actor cannot lock everyone out of one shared
+    // bucket.
+    expect(getClientIp(req)).toMatch(/^ua:/);
   });
 });
 

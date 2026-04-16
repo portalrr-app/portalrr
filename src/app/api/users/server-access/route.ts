@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { authenticateAdmin, isAuthError } from '@/lib/auth/admin';
 import { grantServerAccessSchema, revokeServerAccessSchema, validateBody } from '@/lib/validation';
 import { decryptServerSecrets } from '@/lib/crypto';
+import { jellyfinUserUrl } from '@/lib/servers/jellyfin';
 import { auditLog } from '@/lib/audit';
 import { sendTemplatedEmail } from '@/lib/notifications/email-templates';
 import { logOnError } from '@/lib/logger';
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
 
       // Set library access if specified
       if (remoteUserId && libraries.length > 0) {
-        await fetch(`${server.url}/Users/${remoteUserId}/Policy`, {
+        await fetch(jellyfinUserUrl(server.url, remoteUserId, 'Policy'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -249,12 +250,12 @@ export async function DELETE(request: NextRequest) {
         if (match) {
           if (action === 'disable') {
             // Fetch current user to get full policy, then merge IsDisabled
-            const userRes = await fetch(`${server.url}/Users/${match.Id}`, {
+            const userRes = await fetch(jellyfinUserUrl(server.url, match.Id), {
               headers: { 'X-MediaBrowser-Token': server.apiKey },
             });
             const currentPolicy = userRes.ok ? (await userRes.json()).Policy || {} : {};
 
-            const policyRes = await fetch(`${server.url}/Users/${match.Id}/Policy`, {
+            const policyRes = await fetch(jellyfinUserUrl(server.url, match.Id, 'Policy'), {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -268,7 +269,7 @@ export async function DELETE(request: NextRequest) {
             }
           } else {
             // Delete the account entirely
-            const delRes = await fetch(`${server.url}/Users/${match.Id}`, {
+            const delRes = await fetch(jellyfinUserUrl(server.url, match.Id), {
               method: 'DELETE',
               headers: { 'X-MediaBrowser-Token': server.apiKey },
             });
@@ -442,12 +443,12 @@ export async function PATCH(request: NextRequest) {
 
         if (match) {
           // Fetch current policy, then merge IsDisabled: false
-          const userRes = await fetch(`${server.url}/Users/${match.Id}`, {
+          const userRes = await fetch(jellyfinUserUrl(server.url, match.Id), {
             headers: { 'X-MediaBrowser-Token': server.apiKey },
           });
           const currentPolicy = userRes.ok ? (await userRes.json()).Policy || {} : {};
 
-          const policyRes = await fetch(`${server.url}/Users/${match.Id}/Policy`, {
+          const policyRes = await fetch(jellyfinUserUrl(server.url, match.Id, 'Policy'), {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

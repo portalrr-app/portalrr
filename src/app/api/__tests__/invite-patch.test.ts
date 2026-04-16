@@ -23,6 +23,8 @@ vi.mock('@/lib/crypto', () => ({
   decrypt: (s: string) => s,
   decryptServerSecrets: <T>(s: T) => s,
   generateSessionToken: () => 'mock-token',
+  hashSessionToken: (s: string) => `hash:${s}`,
+  generateInviteCode: () => 'MOCKCODE',
 }));
 vi.mock('@/lib/audit', () => ({ auditLog: vi.fn() }));
 vi.mock('@/lib/notifications/webhooks', () => ({ dispatchWebhook: vi.fn() }));

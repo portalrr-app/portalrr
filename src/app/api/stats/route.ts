@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { authenticateAdmin, isAuthError } from '@/lib/auth/admin';
 import { runAutoRemoveIfDue } from '@/lib/auto-remove';
 import { decryptServerSecrets } from '@/lib/crypto';
+import { jellyfinUserUrl } from '@/lib/servers/jellyfin';
 import { logOnError } from '@/lib/logger';
 
 interface ViewingActivity {
@@ -177,8 +178,14 @@ async function getJellyfinStatsFromItems(serverUrl: string, apiKey: string): Pro
   const playedItemsResults = await Promise.all(
     users.slice(0, 20).map(async (user: Record<string, unknown>) => {
       try {
+        let itemsBase: string;
+        try {
+          itemsBase = jellyfinUserUrl(serverUrl, String(user.Id), 'Items');
+        } catch {
+          return null;
+        }
         const playedItemsRes = await fetch(
-          `${serverUrl}/Users/${user.Id}/Items?` + new URLSearchParams({
+          `${itemsBase}?` + new URLSearchParams({
             limit: '200',
             sortBy: 'DatePlayed',
             sortOrder: 'Descending',

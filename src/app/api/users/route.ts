@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { authenticateAdmin, isAuthError } from '@/lib/auth/admin';
 import { updateUserSchema, deleteUserSchema, validateBody } from '@/lib/validation';
 import { decryptServerSecrets } from '@/lib/crypto';
-import { findJellyfinUserByName } from '@/lib/servers/jellyfin';
+import { findJellyfinUserByName, jellyfinUserUrl } from '@/lib/servers/jellyfin';
 import { randomBytes } from 'crypto';
 import bcrypt from 'bcryptjs';
 import { dispatchWebhook } from '@/lib/notifications/webhooks';
@@ -410,8 +410,8 @@ export async function PATCH(request: NextRequest) {
         );
       }
 
-      if (server.type === 'jellyfin' && server.apiKey) {
-        const jellyfinUserRes = await fetch(`${server.url}/Users/${remoteTargetId}`, {
+      if (server.type === 'jellyfin' && server.apiKey && remoteTargetId) {
+        const jellyfinUserRes = await fetch(jellyfinUserUrl(server.url, remoteTargetId), {
           headers: { 'X-MediaBrowser-Token': server.apiKey },
         });
 
@@ -430,7 +430,7 @@ export async function PATCH(request: NextRequest) {
             ...(!allLibraries && libraries && Array.isArray(libraries) && { EnabledFolders: libraries }),
           };
 
-          const policyRes = await fetch(`${server.url}/Users/${remoteTargetId}/Policy`, {
+          const policyRes = await fetch(jellyfinUserUrl(server.url, remoteTargetId, 'Policy'), {
             method: 'POST',
             headers: {
               'X-MediaBrowser-Token': server.apiKey,
@@ -523,10 +523,14 @@ export async function PATCH(request: NextRequest) {
         // Remote-only user with no local record — create one to store metadata
         const username = (await (async () => {
           if (server && server.type === 'jellyfin' && server.apiKey) {
-            const res = await fetch(`${server.url}/Users/${remoteTargetId}`, {
-              headers: { 'X-MediaBrowser-Token': server.apiKey },
-            });
-            if (res.ok) { const d = await res.json(); return d.Name; }
+            try {
+              const res = await fetch(jellyfinUserUrl(server.url, remoteTargetId), {
+                headers: { 'X-MediaBrowser-Token': server.apiKey },
+              });
+              if (res.ok) { const d = await res.json(); return d.Name; }
+            } catch {
+              // invalid id shape — fall through
+            }
           }
           return remoteTargetId;
         })());
@@ -667,7 +671,14 @@ export async function DELETE(request: NextRequest) {
           }
         }
 
-        const response = await fetch(`${server.url}/Users/${jellyfinUserId}`, {
+        if (!jellyfinUserId) {
+          return NextResponse.json(
+            { message: 'Could not resolve Jellyfin user id for deletion' },
+            { status: 400 }
+          );
+        }
+
+        const response = await fetch(jellyfinUserUrl(server.url, jellyfinUserId), {
           method: 'DELETE',
           headers: {
             'X-MediaBrowser-Token': server.apiKey!,

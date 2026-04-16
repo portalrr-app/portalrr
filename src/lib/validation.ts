@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
-import { isPublicUrl } from '@/lib/sanitize';
+import { isAllowedServerUrl, isPublicUrl } from '@/lib/sanitize';
 
 const safeUrl = z.string().max(500).refine(
   (val) => !val || val.startsWith('/') || val.startsWith('https://') || val.startsWith('http://'),
@@ -27,7 +27,12 @@ export const loginSchema = z.object({
 
 export const setupSchema = z.object({
   username: z.string().min(3).max(50).trim(),
-  password: z.string().min(8).max(128),
+  password: z
+    .string()
+    .min(12, 'Bootstrap admin password must be at least 12 characters')
+    .max(128)
+    .refine((p) => /[A-Za-z]/.test(p), 'Password must contain a letter')
+    .refine((p) => /\d/.test(p), 'Password must contain a number'),
 });
 
 export const registerSchema = z.object({
@@ -61,10 +66,20 @@ export const createInviteSchema = z.object({
   notifyOnExpiry: z.boolean().default(false),
 });
 
+const mediaServerUrl = z
+  .string()
+  .url()
+  .max(500)
+  .refine((u) => /^https?:\/\//i.test(u), { message: 'URL must use http or https' })
+  .refine(isAllowedServerUrl, {
+    message:
+      'URL points to a blocked address (cloud metadata / 169.254.x.x / 0.0.0.0 / link-local IPv6 are not allowed)',
+  });
+
 export const createServerSchema = z.object({
   name: z.string().min(1).max(100).trim(),
   type: z.enum(['plex', 'jellyfin']),
-  url: z.string().url().max(500).refine(u => /^https?:\/\//i.test(u), { message: 'URL must use http or https' }),
+  url: mediaServerUrl,
   token: z.string().max(500).optional(),
   apiKey: z.string().max(500).optional(),
   adminUsername: z.string().max(100).optional(),
@@ -74,7 +89,7 @@ export const createServerSchema = z.object({
 export const updateServerSchema = z.object({
   name: z.string().min(1).max(100).trim().optional(),
   type: z.enum(['plex', 'jellyfin']).optional(),
-  url: z.string().url().max(500).refine(u => /^https?:\/\//i.test(u), { message: 'URL must use http or https' }).optional(),
+  url: mediaServerUrl.optional(),
   token: z.string().max(500).optional(),
   apiKey: z.string().max(500).optional(),
   adminUsername: z.string().max(100).optional(),
@@ -352,6 +367,104 @@ export const importBackupSchema = z.object({
   data: z.record(z.string(), z.unknown()),
 });
 
+// ---- Per-row import schemas ---------------------------------------------
+// Each of these validates one row coming in from an attacker-supplied backup
+// JSON file. Fields are whitelisted so unknown properties are dropped before
+// they reach Prisma. Text fields that end up rendered in HTML/Discord/Telegram
+// are length-capped; HTML/script sanitisation is applied in the route handler
+// via stripHtml on specific fields.
+const isoDateString = z
+  .string()
+  .max(40)
+  .refine((v) => !Number.isNaN(Date.parse(v)), 'must be a valid ISO date');
+
+export const importInviteRowSchema = z.object({
+  id: z.string().max(50),
+  code: z.string().min(1).max(64),
+  serverId: z.string().max(50),
+  libraries: z.string().max(10000).default('[]'),
+  expiresAt: isoDateString.nullable().optional(),
+  accessUntil: isoDateString.nullable().optional(),
+  accessDurationDays: z.number().int().min(0).max(36500).default(0),
+  autoRemove: z.boolean().default(false),
+  maxUses: z.number().int().min(0).max(10000).default(1),
+  uses: z.number().int().min(0).default(0),
+  status: z.string().max(30).default('active'),
+  createdAt: isoDateString.optional(),
+  createdBy: z.string().max(100).default(''),
+  label: z.string().max(100).nullable().optional(),
+  passphrase: z.string().max(300).nullable().optional(),
+  notifyOnUse: z.boolean().default(false),
+  notifyOnExpiry: z.boolean().default(false),
+});
+
+export const importUserRowSchema = z.object({
+  id: z.string().max(50),
+  email: z.string().email().max(255).nullable().optional(),
+  username: z.string().min(1).max(50),
+  inviteId: z.string().max(50).nullable().optional(),
+  serverId: z.string().max(50).nullable().optional(),
+  accessUntil: isoDateString.nullable().optional(),
+  autoRemove: z.boolean().default(false),
+  enableLiveTv: z.boolean().default(true),
+  allLibraries: z.boolean().default(true),
+  libraries: z.string().max(10000).default('[]'),
+  notificationState: z.string().max(10000).default('{}'),
+  createdAt: isoDateString.optional(),
+  disabled: z.boolean().default(false),
+  disabledAt: isoDateString.nullable().optional(),
+  disabledReason: z.string().max(500).nullable().optional(),
+  notes: z.string().max(5000).nullable().optional(),
+  labels: z.string().max(5000).default('[]'),
+  discordUsername: z.string().max(100).nullable().optional(),
+  discordId: z.string().max(50).nullable().optional(),
+  telegramUsername: z.string().max(100).nullable().optional(),
+  telegramId: z.string().max(50).nullable().optional(),
+  matrixId: z.string().max(200).nullable().optional(),
+});
+
+export const importWebhookRowSchema = z.object({
+  id: z.string().max(50),
+  name: z.string().min(1).max(100),
+  url: z.string().url().max(500),
+  type: z.string().max(30).default('generic'),
+  events: z.string().max(2000).default('[]'),
+  enabled: z.boolean().default(true),
+  template: z.string().max(10000).nullable().optional(),
+  createdAt: isoDateString.optional(),
+});
+
+export const importEmailTemplateRowSchema = z.object({
+  id: z.string().max(50),
+  eventType: z.string().min(1).max(50),
+  subject: z.string().min(1).max(500),
+  body: z.string().min(1).max(10000),
+  enabled: z.boolean().default(true),
+  createdAt: isoDateString.optional(),
+  updatedAt: isoDateString.optional(),
+});
+
+export const importAnnouncementRowSchema = z.object({
+  id: z.string().max(50),
+  title: z.string().min(1).max(200),
+  body: z.string().min(1).max(10000),
+  sentBy: z.string().max(100),
+  sentTo: z.string().max(5000).default('all'),
+  sentVia: z.string().max(200).default('[]'),
+  sentCount: z.number().int().min(0).default(0),
+  createdAt: isoDateString.optional(),
+});
+
+export const importServerRowSchema = z.object({
+  id: z.string().max(50),
+  name: z.string().min(1).max(100),
+  type: z.enum(['plex', 'jellyfin']),
+  url: mediaServerUrl,
+  adminUsername: z.string().max(100).nullable().optional(),
+  isActive: z.boolean().default(true),
+  createdAt: isoDateString.optional(),
+});
+
 export const captchaVerifySchema = z.object({
   answer: z.string().min(1).max(20),
 });
@@ -377,6 +490,39 @@ export const bulkUsersSchema = z.object({
 });
 
 // --- Validation Helper ---
+
+/**
+ * Enforce the configurable password policy stored in Settings.
+ * Returns an error message if the policy fails, or null on success.
+ * If no settings row exists (e.g. pre-setup), falls back to a hard baseline
+ * of 8 chars.
+ */
+export interface PasswordPolicy {
+  passwordMinLength: number | null;
+  passwordRequireUppercase: boolean | null;
+  passwordRequireNumber: boolean | null;
+  passwordRequireSpecial: boolean | null;
+}
+
+export function checkPasswordPolicy(
+  password: string,
+  policy: PasswordPolicy | null | undefined
+): string | null {
+  const minLen = policy?.passwordMinLength ?? 8;
+  if (password.length < minLen) {
+    return `Password must be at least ${minLen} characters`;
+  }
+  if (policy?.passwordRequireUppercase && !/[A-Z]/.test(password)) {
+    return 'Password must contain at least one uppercase letter';
+  }
+  if (policy?.passwordRequireNumber && !/\d/.test(password)) {
+    return 'Password must contain at least one number';
+  }
+  if (policy?.passwordRequireSpecial && !/[^a-zA-Z0-9]/.test(password)) {
+    return 'Password must contain at least one special character';
+  }
+  return null;
+}
 
 export function validateBody<T>(
   schema: z.ZodSchema<T>,

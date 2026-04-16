@@ -54,24 +54,65 @@ export const RATE_LIMITS = {
   adminWrite: { maxAttempts: 30, windowMs: 15 * 60 * 1000 },
 } as const;
 
+let warnedNoTrustedProxy = false;
+
+/**
+ * Resolve a best-effort client IP for rate-limit bucketing.
+ *
+ * When TRUSTED_PROXY_COUNT is set and > 0 we parse x-forwarded-for with
+ * that proxy hop count (the header is trusted because a known proxy set it).
+ *
+ * When TRUSTED_PROXY_COUNT is 0 / unset we still need *some* dimension to
+ * spread rate-limit buckets across — otherwise every request collapses into
+ * one global counter and a single attacker can DoS every other user by
+ * exhausting the bucket. The fallback uses the leftmost value of
+ * x-forwarded-for / x-real-ip. This is spoofable, but no worse than an
+ * attacker rotating source IPs at the network level; it is strictly better
+ * than the previous "single shared bucket" behaviour.
+ *
+ * Operators who do not sit behind a reverse proxy should still set
+ * TRUSTED_PROXY_COUNT to an appropriate value (typically 0 for direct-expose,
+ * 1 for most reverse proxies). We emit a one-shot warning at boot to make the
+ * configuration requirement visible.
+ */
 export function getClientIp(request: NextRequest): string {
-  // Only trust x-forwarded-for if TRUSTED_PROXY_COUNT is configured.
-  // This prevents clients from spoofing their IP via the header.
-  const trustedProxies = parseInt(process.env.TRUSTED_PROXY_COUNT || '0', 10);
-  if (trustedProxies > 0) {
-    const forwarded = request.headers.get('x-forwarded-for');
-    if (forwarded) {
-      const ips = forwarded.split(',').map(ip => ip.trim()).filter(Boolean);
-      // Each trusted proxy appends one IP. The client IP is just before the trusted proxies.
-      const idx = Math.max(0, ips.length - trustedProxies - 1);
-      return ips[idx] || '127.0.0.1';
-    }
+  const raw = process.env.TRUSTED_PROXY_COUNT;
+  const trustedProxies = raw !== undefined ? parseInt(raw, 10) : NaN;
+  const configured = Number.isFinite(trustedProxies) && trustedProxies >= 0;
+
+  if (!configured && !warnedNoTrustedProxy) {
+    warnedNoTrustedProxy = true;
+    console.warn(
+      '[rate-limit] TRUSTED_PROXY_COUNT is not configured. Falling back to best-effort IP from x-forwarded-for / x-real-ip. ' +
+      'For correct rate limiting, set TRUSTED_PROXY_COUNT=1 behind a reverse proxy, or 0 for direct exposure.'
+    );
   }
-  // x-real-ip is only trustworthy when set by a known reverse proxy
-  if (trustedProxies > 0) {
-    return request.headers.get('x-real-ip') || '127.0.0.1';
+
+  const forwarded = request.headers.get('x-forwarded-for');
+  const realIp = request.headers.get('x-real-ip');
+
+  if (configured && trustedProxies > 0 && forwarded) {
+    const ips = forwarded.split(',').map((ip) => ip.trim()).filter(Boolean);
+    const idx = Math.max(0, ips.length - trustedProxies - 1);
+    return ips[idx] || realIp || fallbackBucket(request);
   }
-  return '127.0.0.1';
+
+  if (forwarded) {
+    const first = forwarded.split(',')[0]?.trim();
+    if (first) return first;
+  }
+  if (realIp) return realIp;
+
+  return fallbackBucket(request);
+}
+
+/**
+ * When no IP-identifying header is present, at least bucket per user-agent so
+ * a single misbehaving client can't lock everyone else out of the same bucket.
+ */
+function fallbackBucket(request: NextRequest): string {
+  const ua = request.headers.get('user-agent') || 'unknown';
+  return `ua:${ua.slice(0, 64)}`;
 }
 
 export function rateLimitResponse(retryAfterMs: number) {

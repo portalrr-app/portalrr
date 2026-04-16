@@ -1,7 +1,9 @@
-import { randomBytes, createCipheriv, createDecipheriv } from 'crypto';
+import { randomBytes, createCipheriv, createDecipheriv, createHash } from 'crypto';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;
+
+let warnedBadKey = false;
 
 function getKey(): Buffer | null {
   const hex = process.env.ENCRYPTION_KEY;
@@ -13,7 +15,10 @@ function getKey(): Buffer | null {
   }
   const buf = Buffer.from(hex, 'hex');
   if (buf.length !== 32) {
-    console.error('ENCRYPTION_KEY must be exactly 64 hex characters (32 bytes). Encryption disabled.');
+    if (!warnedBadKey) {
+      warnedBadKey = true;
+      console.error('ENCRYPTION_KEY must be exactly 64 hex characters (32 bytes). Encryption disabled.');
+    }
     return null;
   }
   return buf;
@@ -39,12 +44,17 @@ export function encrypt(plaintext: string): string {
  * Decrypt a string produced by encrypt(). If the string doesn't start with `enc:`,
  * it's treated as unencrypted plaintext (backwards compat).
  */
+let warnedMissingKey = false;
+
 export function decrypt(stored: string): string {
   if (!stored.startsWith('enc:')) return stored;
 
   const key = getKey();
   if (!key) {
-    console.error('Cannot decrypt: ENCRYPTION_KEY not set but encrypted data found.');
+    if (!warnedMissingKey) {
+      warnedMissingKey = true;
+      console.error('Cannot decrypt: ENCRYPTION_KEY not set but encrypted data found.');
+    }
     return '';
   }
 
@@ -68,10 +78,18 @@ export function generateSessionToken(): string {
 }
 
 /**
- * Generate a cryptographically secure invite code (10 hex chars = 40 bits).
+ * Generate a cryptographically secure invite code (32 hex chars = 128 bits).
  */
 export function generateInviteCode(): string {
-  return randomBytes(5).toString('hex').toUpperCase();
+  return randomBytes(16).toString('hex').toUpperCase();
+}
+
+/**
+ * Hash a session token with SHA-256 for at-rest storage.
+ * The cookie carries the raw token; the DB only stores the hash.
+ */
+export function hashSessionToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
 }
 
 /**

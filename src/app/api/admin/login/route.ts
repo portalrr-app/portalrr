@@ -6,16 +6,20 @@ import { loginSchema, validateBody } from '@/lib/validation';
 import { checkRateLimit, RATE_LIMITS, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { authenticateJellyfinAdmin } from '@/lib/servers/jellyfin';
 import { authenticatePlexAdmin } from '@/lib/servers/plex';
-import { decrypt, decryptServerSecrets, generateSessionToken } from '@/lib/crypto';
-import { randomUUID } from 'crypto';
+import { decrypt, decryptServerSecrets, generateSessionToken, hashSessionToken } from '@/lib/crypto';
+import { randomBytes, randomUUID } from 'crypto';
 import { auditLog } from '@/lib/audit';
 import { dispatchWebhook } from '@/lib/notifications/webhooks';
 
 async function createSession(adminId: string, request?: NextRequest) {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const session = await prisma.adminSession.create({
+  // Cookie value (the secret) is independent of the DB row id. We store only
+  // sha256(cookie) so the Sessions admin page can never leak usable tokens.
+  const cookieToken = generateSessionToken();
+  await prisma.adminSession.create({
     data: {
-      id: generateSessionToken(),
+      id: randomBytes(12).toString('hex'),
+      tokenHash: hashSessionToken(cookieToken),
       adminId,
       expiresAt,
       ipAddress: request ? getClientIp(request) : null,
@@ -28,7 +32,7 @@ async function createSession(adminId: string, request?: NextRequest) {
   });
 
   const response = NextResponse.json({ success: true });
-  response.cookies.set('admin_session', session.id, {
+  response.cookies.set('admin_session', cookieToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production' && process.env.INSECURE_COOKIES !== 'true',
     sameSite: 'lax',
@@ -37,6 +41,9 @@ async function createSession(adminId: string, request?: NextRequest) {
   });
   return response;
 }
+
+// Pre-hash for constant-time comparison when the admin doesn't exist (mitigates timing-based enumeration).
+const DUMMY_HASH = '$2a$12$x'.padEnd(60, '0');
 
 async function tryMediaServerAuth(username: string, password: string): Promise<string | null> {
   const settings = await prisma.settings.findFirst();
@@ -112,14 +119,16 @@ export async function POST(request: NextRequest) {
     });
 
     if (admin) {
-      // Check account lockout
+      // Check account lockout. Emit a generic "Invalid credentials" response so
+      // the 423/lockout status does not disclose which usernames exist; log the
+      // lockout and short-circuit before any password comparison or media-server
+      // fallback runs (both of which would waste time and could itself leak
+      // enumeration signal).
       if (admin.lockedUntil && admin.lockedUntil > new Date()) {
-        const retryAfterMs = admin.lockedUntil.getTime() - Date.now();
         auditLog('admin.login.locked', { username, ip });
-        return Response.json(
-          { message: 'Account temporarily locked due to too many failed attempts. Try again later.' },
-          { status: 423, headers: { 'Retry-After': String(Math.ceil(retryAfterMs / 1000)) } }
-        );
+        // Run dummy bcrypt to keep timing indistinguishable from the unknown-admin path.
+        await bcrypt.compare(password, DUMMY_HASH);
+        return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
       }
 
       // Check local password first
@@ -162,6 +171,10 @@ export async function POST(request: NextRequest) {
         data: { failedLoginAttempts: attempts, lockedUntil: lockout },
       });
     } else {
+      // Run dummy bcrypt to keep timing roughly comparable to the existing-admin
+      // path (which always runs at least one bcrypt.compare before falling back).
+      await bcrypt.compare(password, DUMMY_HASH);
+
       // No existing admin — try media server auth to create one
       const mediaAdminId = await tryMediaServerAuth(username, password);
       if (mediaAdminId) {

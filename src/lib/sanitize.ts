@@ -88,6 +88,45 @@ export function isPublicUrl(urlString: string): boolean {
   }
 }
 
+/**
+ * Check if a URL is acceptable as a media-server endpoint.
+ *
+ * Plex/Jellyfin are typically reachable over LAN/docker networks, so we cannot
+ * reject private IPs outright (as we do for webhook URLs). We *do* block the
+ * cloud-metadata link-local range (169.254.0.0/16) and the 0.0.0.0 wildcard,
+ * both of which have no legitimate use case for a media server and are the
+ * highest-value SSRF targets if an admin session is compromised.
+ */
+export function isAllowedServerUrl(urlString: string): boolean {
+  try {
+    const url = new URL(urlString);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+
+    const hostname = url.hostname.toLowerCase();
+
+    // Link-local / cloud metadata (AWS/Azure/GCP IMDS)
+    if (/^169\.254\.\d+\.\d+$/.test(hostname)) return false;
+    if (/^\[?fe80:/i.test(hostname)) return false;
+
+    // All-zeros wildcard
+    if (hostname === '0.0.0.0' || hostname === '::' || hostname === '[::]') return false;
+
+    // Reject packed-integer / hex obfuscation of blocked ranges
+    if (/^\d+$/.test(hostname)) {
+      const num = parseInt(hostname, 10);
+      if (num >>> 16 === 0xA9FE || num === 0) return false;
+    }
+    if (/^0x[0-9a-f]+$/i.test(hostname)) {
+      const num = parseInt(hostname, 16);
+      if (num >>> 16 === 0xA9FE || num === 0) return false;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function isPrivateIpNum(num: number): boolean {
   if (num < 0 || num > 0xFFFFFFFF) return true; // invalid
   // 127.0.0.0/8

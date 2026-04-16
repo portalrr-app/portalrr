@@ -5,11 +5,31 @@ import { validateSession } from '@/lib/auth/session';
 import { encrypt, decrypt } from '@/lib/crypto';
 import bcrypt from 'bcryptjs';
 
-export async function GET(request: NextRequest) {
+/**
+ * Start enrolment for a new TOTP secret.
+ *
+ * Changed from GET → POST:
+ *   - The endpoint writes to the Admin row (rotates totpSecret) so it is not
+ *     safe as an idempotent GET; POST is also CSRF-protected by the proxy
+ *     Origin/Referer check, which defends against drive-by secret rotation
+ *     from an authenticated admin's browser.
+ *
+ * Refuses to re-key if 2FA is already enabled — the admin must DELETE (which
+ * requires TOTP code or password) to disable first, preventing silent secret
+ * replacement if a session cookie is stolen.
+ */
+export async function POST(request: NextRequest) {
   try {
     const result = await validateSession(request);
     if (!result) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (result.admin.totpEnabled) {
+      return NextResponse.json(
+        { message: '2FA is already enabled. Disable it first before re-enrolling.' },
+        { status: 409 }
+      );
     }
 
     const secret = generateSecret();

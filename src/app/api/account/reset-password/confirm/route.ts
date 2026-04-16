@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { resetPasswordSchema, validateBody } from '@/lib/validation';
+import { checkPasswordPolicy, resetPasswordSchema, validateBody } from '@/lib/validation';
 import { checkRateLimit, getClientIp, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit';
 import { auditLog } from '@/lib/audit';
 import { decryptServerSecrets } from '@/lib/crypto';
@@ -29,20 +29,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (pwSettings) {
-      const minLen = pwSettings.passwordMinLength || 8;
-      if (newPassword.length < minLen) {
-        return NextResponse.json({ message: `Password must be at least ${minLen} characters` }, { status: 400 });
-      }
-      if (pwSettings.passwordRequireUppercase && !/[A-Z]/.test(newPassword)) {
-        return NextResponse.json({ message: 'Password must contain at least one uppercase letter' }, { status: 400 });
-      }
-      if (pwSettings.passwordRequireNumber && !/\d/.test(newPassword)) {
-        return NextResponse.json({ message: 'Password must contain at least one number' }, { status: 400 });
-      }
-      if (pwSettings.passwordRequireSpecial && !/[^a-zA-Z0-9]/.test(newPassword)) {
-        return NextResponse.json({ message: 'Password must contain at least one special character' }, { status: 400 });
-      }
+    const policyError = checkPasswordPolicy(newPassword, pwSettings);
+    if (policyError) {
+      return NextResponse.json({ message: policyError }, { status: 400 });
     }
 
     const resetToken = await prisma.passwordResetToken.findUnique({

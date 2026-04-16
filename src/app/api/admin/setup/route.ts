@@ -3,7 +3,8 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { setupSchema, validateBody } from '@/lib/validation';
 import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
-import { generateSessionToken } from '@/lib/crypto';
+import { generateSessionToken, hashSessionToken } from '@/lib/crypto';
+import { randomBytes } from 'crypto';
 
 // GET: check if setup is needed
 export async function GET() {
@@ -55,12 +56,18 @@ export async function POST(request: NextRequest) {
     });
 
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    const session = await prisma.adminSession.create({
-      data: { id: generateSessionToken(), adminId: admin.id, expiresAt },
+    const cookieToken = generateSessionToken();
+    await prisma.adminSession.create({
+      data: {
+        id: randomBytes(12).toString('hex'),
+        tokenHash: hashSessionToken(cookieToken),
+        adminId: admin.id,
+        expiresAt,
+      },
     });
 
     const response = NextResponse.json({ success: true });
-    response.cookies.set('admin_session', session.id, {
+    response.cookies.set('admin_session', cookieToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production' && process.env.INSECURE_COOKIES !== 'true',
       sameSite: 'lax',
