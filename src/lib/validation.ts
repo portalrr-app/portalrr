@@ -151,6 +151,13 @@ export const updateSettingsSchema = z.object({
   onboardingSubtitle: z.string().max(500).optional(),
   onboardingButtonText: z.string().max(100).optional(),
   onboardingButtonUrl: safeUrl.optional(),
+  // Onboarding visuals
+  onboardingParticleStyle: z.enum(['none', 'constellation', 'starfield', 'orbs', 'portals', 'grid']).optional(),
+  onboardingParticleIntensity: z.number().min(0.2).max(1.8).optional(),
+  onboardingParticleCursor: z.boolean().optional(),
+  onboardingLayout: z.enum(['centered', 'split', 'immersive']).optional(),
+  onboardingTransition: z.enum(['glide', 'fade', 'warp']).optional(),
+  onboardingGlass: z.boolean().optional(),
   jellyseerrUrl: externalUrl.optional().nullable(),
   jellyseerrApiKey: z.string().max(500).optional().nullable(),
   mediaServerAuth: z.boolean().optional(),

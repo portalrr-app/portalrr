@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Server } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { checkRateLimit, getClientIp, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit';
+import { decryptServerSecrets } from '@/lib/crypto';
 
 export async function GET(
   _request: NextRequest,
@@ -52,12 +54,14 @@ export async function GET(
       );
     }
 
-    let libraries: string[] = [];
+    let libraryIds: string[] = [];
     try {
-      libraries = JSON.parse(invite.libraries || '[]');
+      libraryIds = JSON.parse(invite.libraries || '[]');
     } catch {
-      libraries = [];
+      libraryIds = [];
     }
+
+    const libraries = await resolveLibraryNames(invite.server, libraryIds);
 
     const settings = await prisma.settings.findFirst({
       select: {
@@ -99,5 +103,52 @@ export async function GET(
       { valid: false, message: 'Something went wrong' },
       { status: 500 }
     );
+  }
+}
+
+// Map the stored library IDs on an invite to friendly names by hitting the
+// media server. Failures are non-fatal — we fall back to showing the ID so the
+// invite flow still renders.
+async function resolveLibraryNames(server: Server | null, ids: string[]): Promise<string[]> {
+  if (!server || ids.length === 0) return ids;
+  try {
+    const decrypted = decryptServerSecrets(server);
+    const idToName = new Map<string, string>();
+
+    if (decrypted.type === 'jellyfin' && decrypted.apiKey) {
+      const res = await fetch(`${decrypted.url}/Library/VirtualFolders`, {
+        headers: { 'X-MediaBrowser-Token': decrypted.apiKey, Accept: 'application/json' },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          data.forEach((lib: Record<string, unknown>, index: number) => {
+            const name = (lib.Name as string) || (lib.name as string) || `Library ${index + 1}`;
+            const itemId = (lib.ItemId as string) || `jellyfin-lib-${index}`;
+            idToName.set(itemId, name);
+          });
+        }
+      }
+    } else if (decrypted.type === 'plex' && decrypted.token) {
+      const res = await fetch(`${decrypted.url}/library/sections`, {
+        headers: { 'X-Plex-Token': decrypted.token, Accept: 'application/json' },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const directories = data?.MediaContainer?.Directory || [];
+        const sections = Array.isArray(directories) ? directories : [directories];
+        for (const section of sections) {
+          if (!section) continue;
+          const key = String(section.key || '');
+          const title = section.title || `Library ${key}`;
+          idToName.set(`plex-lib-${key}`, title);
+        }
+      }
+    }
+
+    return ids.map((id) => idToName.get(id) || id);
+  } catch (err) {
+    console.error('Failed to resolve library names:', err);
+    return ids;
   }
 }

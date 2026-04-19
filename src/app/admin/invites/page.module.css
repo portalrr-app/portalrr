@@ -92,12 +92,18 @@
 }
 
 .code {
+  display: inline-block;
+  max-width: 100%;
   font-family: monospace;
   font-size: 12px;
   color: var(--text-primary);
   background: var(--bg-elevated);
   padding: 4px 8px;
   border-radius: var(--radius-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 
 .email {

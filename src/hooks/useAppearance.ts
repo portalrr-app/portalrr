@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from 'react';
 
+export type OnboardingParticleStyle = 'none' | 'constellation' | 'starfield' | 'orbs' | 'portals' | 'grid';
+export type OnboardingFlowLayout = 'centered' | 'split' | 'immersive';
+export type OnboardingFlowTransition = 'glide' | 'fade' | 'warp';
+
 export interface AppearanceSettings {
   serverName: string;
   accentColor: string;
@@ -29,6 +33,13 @@ export interface AppearanceSettings {
   hideAdminLink: boolean;
   buttonText: string;
   registerButtonText: string;
+  // Onboarding flow visuals — apply across the whole onboarding journey
+  onboardingParticleStyle?: OnboardingParticleStyle;
+  onboardingParticleIntensity?: number;
+  onboardingParticleCursor?: boolean;
+  onboardingLayout?: OnboardingFlowLayout;
+  onboardingTransition?: OnboardingFlowTransition;
+  onboardingGlass?: boolean;
 }
 
 const RADIUS_MAP: Record<string, Record<string, string>> = {

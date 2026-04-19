@@ -45,6 +45,16 @@ export async function GET(_request: NextRequest) {
         passwordRequireSpecial: true,
         emailEnabled: true,
         referralInvitesEnabled: true,
+        onboardingTitle: true,
+        onboardingSubtitle: true,
+        onboardingButtonText: true,
+        onboardingButtonUrl: true,
+        onboardingParticleStyle: true,
+        onboardingParticleIntensity: true,
+        onboardingParticleCursor: true,
+        onboardingLayout: true,
+        onboardingTransition: true,
+        onboardingGlass: true,
       },
     });
 

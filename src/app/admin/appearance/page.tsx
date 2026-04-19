@@ -8,6 +8,10 @@ import {
 } from '@/lib/theme';
 import styles from './page.module.css';
 
+type ParticleStyle = 'none' | 'constellation' | 'starfield' | 'orbs' | 'portals' | 'grid';
+type OnboardingFlowLayout = 'centered' | 'split' | 'immersive';
+type OnboardingFlowTransition = 'glide' | 'fade' | 'warp';
+
 interface AppearanceState {
   accentColor: string;
   appName: string;
@@ -34,6 +38,12 @@ interface AppearanceState {
   buttonText: string;
   registerButtonText: string;
   customCss: string;
+  onboardingParticleStyle: ParticleStyle;
+  onboardingParticleIntensity: number;
+  onboardingParticleCursor: boolean;
+  onboardingLayout: OnboardingFlowLayout;
+  onboardingTransition: OnboardingFlowTransition;
+  onboardingGlass: boolean;
 }
 
 const DEFAULTS: AppearanceState = {
@@ -62,7 +72,34 @@ const DEFAULTS: AppearanceState = {
   buttonText: 'Continue',
   registerButtonText: 'Create Account',
   customCss: '',
+  onboardingParticleStyle: 'constellation',
+  onboardingParticleIntensity: 1,
+  onboardingParticleCursor: true,
+  onboardingLayout: 'centered',
+  onboardingTransition: 'glide',
+  onboardingGlass: false,
 };
+
+const PARTICLE_OPTIONS: { key: ParticleStyle; label: string }[] = [
+  { key: 'constellation', label: 'Constellation' },
+  { key: 'starfield', label: 'Starfield' },
+  { key: 'orbs', label: 'Aurora orbs' },
+  { key: 'portals', label: 'Portals' },
+  { key: 'grid', label: 'Neon grid' },
+  { key: 'none', label: 'Off' },
+];
+
+const LAYOUT_OPTIONS: { key: OnboardingFlowLayout; label: string }[] = [
+  { key: 'centered', label: 'Centered' },
+  { key: 'split', label: 'Split' },
+  { key: 'immersive', label: 'Immersive' },
+];
+
+const TRANSITION_OPTIONS: { key: OnboardingFlowTransition; label: string }[] = [
+  { key: 'glide', label: 'Glide' },
+  { key: 'fade', label: 'Fade' },
+  { key: 'warp', label: 'Warp' },
+];
 
 const PRESETS: { name: string; values: Partial<AppearanceState> }[] = [
   { name: 'Default', values: { accentColor: '#A78BFA', backgroundStyle: 'gradient', cardStyle: 'bordered', borderRadius: 'large', fontFamily: 'dm-sans', fontDisplay: 'space-grotesk', buttonStyle: 'rounded', inputStyle: 'outlined', enableNoise: true, gradientDirection: 'top' } },
@@ -75,11 +112,21 @@ const PRESETS: { name: string; values: Partial<AppearanceState> }[] = [
   { name: 'Coral', values: { accentColor: '#FB7185', backgroundStyle: 'gradient', cardStyle: 'glass', borderRadius: 'large', fontFamily: 'inter', fontDisplay: 'outfit', buttonStyle: 'pill', inputStyle: 'filled', enableNoise: true, gradientDirection: 'bottom-right' } },
 ];
 
+type PreviewStep = 'invite' | 'rules' | 'details' | 'welcome' | 'ready';
+const PREVIEW_STEPS: { key: PreviewStep; phase: string; label: string }[] = [
+  { key: 'invite', phase: 'Join', label: 'Invite' },
+  { key: 'rules', phase: 'Join', label: 'Rules' },
+  { key: 'details', phase: 'Account', label: 'Details' },
+  { key: 'welcome', phase: 'Onboard', label: 'Welcome' },
+  { key: 'ready', phase: 'Onboard', label: 'Ready' },
+];
+
 export default function AppearancePage() {
   const [form, setForm] = useState<AppearanceState>(DEFAULTS);
   const [saving, setSaving] = useState(false);
   const [showSaveBar, setShowSaveBar] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [previewStep, setPreviewStep] = useState<PreviewStep>('invite');
 
   useEffect(() => {
     fetch('/api/settings')
@@ -111,6 +158,12 @@ export default function AppearancePage() {
           buttonText: data.buttonText || DEFAULTS.buttonText,
           registerButtonText: data.registerButtonText || DEFAULTS.registerButtonText,
           customCss: data.customCss || '',
+          onboardingParticleStyle: (data.onboardingParticleStyle as ParticleStyle) || DEFAULTS.onboardingParticleStyle,
+          onboardingParticleIntensity: typeof data.onboardingParticleIntensity === 'number' ? data.onboardingParticleIntensity : DEFAULTS.onboardingParticleIntensity,
+          onboardingParticleCursor: data.onboardingParticleCursor ?? DEFAULTS.onboardingParticleCursor,
+          onboardingLayout: (data.onboardingLayout as OnboardingFlowLayout) || DEFAULTS.onboardingLayout,
+          onboardingTransition: (data.onboardingTransition as OnboardingFlowTransition) || DEFAULTS.onboardingTransition,
+          onboardingGlass: data.onboardingGlass ?? DEFAULTS.onboardingGlass,
         });
       })
       .catch(console.error)
@@ -430,6 +483,102 @@ export default function AppearancePage() {
             </div>
           </div>
 
+          {/* Onboarding Flow visuals */}
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>Onboarding Flow</h2>
+            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: '-8px 0 12px' }}>
+              Tune the animated stage used across the invite → register → onboarding journey.
+            </p>
+            <div className={styles.fieldGroup}>
+              <div className={styles.field}>
+                <label className={styles.label}>Particle background</label>
+                <div className={styles.optionRow}>
+                  {PARTICLE_OPTIONS.map((o) => (
+                    <button
+                      key={o.key}
+                      type="button"
+                      className={`${styles.optionButton} ${form.onboardingParticleStyle === o.key ? styles.selected : ''}`}
+                      onClick={() => update('onboardingParticleStyle', o.key)}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>
+                  Density: {form.onboardingParticleIntensity.toFixed(1)}×
+                </label>
+                <input
+                  type="range"
+                  className={styles.slider}
+                  min={0.2}
+                  max={1.8}
+                  step={0.1}
+                  value={form.onboardingParticleIntensity}
+                  onChange={(e) => update('onboardingParticleIntensity', parseFloat(e.target.value))}
+                  disabled={form.onboardingParticleStyle === 'none'}
+                />
+              </div>
+
+              <div className={styles.checkboxField}>
+                <label className={styles.checkbox}>
+                  <input
+                    type="checkbox"
+                    checked={form.onboardingParticleCursor}
+                    onChange={(e) => update('onboardingParticleCursor', e.target.checked)}
+                    disabled={form.onboardingParticleStyle === 'none'}
+                  />
+                  <span>Particles react to cursor</span>
+                </label>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>Layout</label>
+                <div className={styles.optionRow}>
+                  {LAYOUT_OPTIONS.map((o) => (
+                    <button
+                      key={o.key}
+                      type="button"
+                      className={`${styles.optionButton} ${form.onboardingLayout === o.key ? styles.selected : ''}`}
+                      onClick={() => update('onboardingLayout', o.key)}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>Entry transition</label>
+                <div className={styles.optionRow}>
+                  {TRANSITION_OPTIONS.map((o) => (
+                    <button
+                      key={o.key}
+                      type="button"
+                      className={`${styles.optionButton} ${form.onboardingTransition === o.key ? styles.selected : ''}`}
+                      onClick={() => update('onboardingTransition', o.key)}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.checkboxField}>
+                <label className={styles.checkbox}>
+                  <input
+                    type="checkbox"
+                    checked={form.onboardingGlass}
+                    onChange={(e) => update('onboardingGlass', e.target.checked)}
+                  />
+                  <span>Glassmorphism surface</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
           {/* Custom CSS */}
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>Custom CSS</h2>
@@ -440,50 +589,27 @@ export default function AppearancePage() {
         {/* Live Preview */}
         <div className={styles.previewPanel}>
           <div className={styles.previewLabel}>Live Preview</div>
-          <div className={styles.previewFrame}>
-            <div className={styles.previewBackground} style={previewBgStyle}>
-              {form.backgroundStyle === 'image' && form.backgroundImageUrl && (
-                <div className={styles.previewOverlay} style={{ opacity: form.backgroundOverlay }} />
-              )}
-            </div>
-            <div className={styles.previewContent}>
-              <div className={styles.previewLogo}>
-                {form.logoMode === 'icon' && (
-                  <div className={styles.previewLogoIcon}>
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <rect x="3" y="3" width="18" height="18" rx="4" style={{ fill: 'var(--accent)' }} />
-                      <rect x="7" y="7" width="10" height="10" rx="2.5" style={{ fill: '#0A0A0A' }} />
-                      <rect x="9.5" y="9.5" width="5" height="5" rx="1.5" style={{ fill: 'var(--accent)' }} />
-                    </svg>
-                  </div>
-                )}
-                {form.logoMode === 'image' && form.logoUrl && (
-                  <img src={form.logoUrl} alt="" className={styles.previewLogoImg} />
-                )}
-                <span className={styles.previewAppName}>{form.appName}</span>
-              </div>
-
-              <div className={styles.previewCard} style={cardStyles}>
-                <div className={styles.previewCardTitle}>{form.welcomeTitle}</div>
-                <div className={styles.previewCardSubtitle}>{form.subtitleText}</div>
-                <div className={styles.previewInput}>
-                  <div className={styles.previewInputLabel}>Invite Code</div>
-                  <div className={styles.previewInputBox} style={inputBoxStyle} />
-                </div>
-                <div className={styles.previewButton} style={{ background: form.accentColor, borderRadius: btnRadius }}>
-                  {form.buttonText || 'Continue'}
-                </div>
-              </div>
-
-              <div className={styles.previewFooter}>
-                {form.footerText && <span>{form.footerText}</span>}
-                <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-                  <span>My Account</span>
-                  {!form.hideAdminLink && <span>Admin login</span>}
-                </div>
-              </div>
-            </div>
+          <div className={styles.previewSteps}>
+            {PREVIEW_STEPS.map((s) => (
+              <button
+                key={s.key}
+                type="button"
+                className={`${styles.previewStepChip} ${previewStep === s.key ? styles.previewStepChipActive : ''}`}
+                onClick={() => setPreviewStep(s.key)}
+              >
+                <span className={styles.previewStepPhase}>{s.phase}</span>
+                <span className={styles.previewStepLabel}>{s.label}</span>
+              </button>
+            ))}
           </div>
+          <FlowPreviewFrame
+            form={form}
+            step={previewStep}
+            previewBgStyle={previewBgStyle}
+            cardStyles={cardStyles}
+            inputBoxStyle={inputBoxStyle}
+            btnRadius={btnRadius}
+          />
         </div>
       </div>
 
@@ -494,5 +620,241 @@ export default function AppearancePage() {
         </div>
       )}
     </div>
+  );
+}
+
+/* ========================= LIVE PREVIEW ========================= */
+
+function FlowPreviewFrame({
+  form,
+  step,
+  previewBgStyle,
+  cardStyles,
+  inputBoxStyle,
+  btnRadius,
+}: {
+  form: AppearanceState;
+  step: PreviewStep;
+  previewBgStyle: React.CSSProperties;
+  cardStyles: React.CSSProperties;
+  inputBoxStyle: React.CSSProperties;
+  btnRadius: string;
+}) {
+  const particleActive = form.onboardingParticleStyle !== 'none';
+  const showFlowChrome = particleActive || step !== 'invite';
+
+  return (
+    <div
+      className={styles.previewFrame}
+      data-particle={form.onboardingParticleStyle}
+      data-layout={form.onboardingLayout}
+      data-glass={form.onboardingGlass ? 'on' : 'off'}
+      data-transition={form.onboardingTransition}
+    >
+      {showFlowChrome ? (
+        <>
+          <div className={styles.flowPreviewBg} />
+          <div className={styles.flowPreviewVignette} />
+        </>
+      ) : (
+        <div className={styles.previewBackground} style={previewBgStyle}>
+          {form.backgroundStyle === 'image' && form.backgroundImageUrl && (
+            <div className={styles.previewOverlay} style={{ opacity: form.backgroundOverlay }} />
+          )}
+        </div>
+      )}
+
+      {showFlowChrome ? (
+        <FlowStagePreview form={form} step={step} btnRadius={btnRadius} />
+      ) : (
+        <div className={styles.previewContent} key="legacy-invite">
+          <div className={styles.previewLogo}>
+            {form.logoMode === 'icon' && (
+              <div className={styles.previewLogoIcon}>
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="3" y="3" width="18" height="18" rx="4" style={{ fill: 'var(--accent)' }} />
+                  <rect x="7" y="7" width="10" height="10" rx="2.5" style={{ fill: '#0A0A0A' }} />
+                  <rect x="9.5" y="9.5" width="5" height="5" rx="1.5" style={{ fill: 'var(--accent)' }} />
+                </svg>
+              </div>
+            )}
+            {form.logoMode === 'image' && form.logoUrl && (
+              <img src={form.logoUrl} alt="" className={styles.previewLogoImg} />
+            )}
+            <span className={styles.previewAppName}>{form.appName}</span>
+          </div>
+          <div className={styles.previewCard} style={cardStyles}>
+            <div className={styles.previewCardTitle}>{form.welcomeTitle}</div>
+            <div className={styles.previewCardSubtitle}>{form.subtitleText}</div>
+            <div className={styles.previewInput}>
+              <div className={styles.previewInputLabel}>Invite Code</div>
+              <div className={styles.previewInputBox} style={inputBoxStyle} />
+            </div>
+            <div className={styles.previewButton} style={{ background: form.accentColor, borderRadius: btnRadius }}>
+              {form.buttonText || 'Continue'}
+            </div>
+          </div>
+          <div className={styles.previewFooter}>
+            {form.footerText && <span>{form.footerText}</span>}
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <span>My Account</span>
+              {!form.hideAdminLink && <span>Admin login</span>}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FlowStagePreview({
+  form,
+  step,
+  btnRadius,
+}: {
+  form: AppearanceState;
+  step: PreviewStep;
+  btnRadius: string;
+}) {
+  return (
+    <div className={styles.flowStage} key={`${step}-${form.onboardingTransition}-${form.onboardingLayout}-${form.onboardingGlass}`}>
+      {step === 'invite' && <InvitePreview form={form} btnRadius={btnRadius} />}
+      {step === 'rules' && <RulesPreview form={form} btnRadius={btnRadius} />}
+      {step === 'details' && <DetailsPreview form={form} btnRadius={btnRadius} />}
+      {step === 'welcome' && <WelcomePreview form={form} />}
+      {step === 'ready' && <ReadyPreview form={form} btnRadius={btnRadius} />}
+    </div>
+  );
+}
+
+function Emblem({ small }: { small?: boolean }) {
+  return (
+    <div className={`${styles.flowEmblem} ${small ? styles.flowEmblemSmall : ''}`} aria-hidden="true">
+      <span className={styles.flowEmblemRing} />
+      <span className={`${styles.flowEmblemRing} ${styles.flowEmblemRing2}`} />
+      <div className={styles.flowEmblemCore}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <ellipse cx="12" cy="12" rx="4" ry="9" />
+          <ellipse cx="12" cy="12" rx="9" ry="4" />
+          <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function InvitePreview({ form, btnRadius }: { form: AppearanceState; btnRadius: string }) {
+  return (
+    <>
+      <Emblem />
+      <div className={styles.flowKicker}>You&apos;ve been invited</div>
+      <div className={styles.flowTitle}>Join Jonas&apos;s Media Vault.</div>
+      <div className={styles.flowSubtitle}>Review what&apos;s included and accept the invite.</div>
+      <div className={styles.flowSummary}>
+        <div className={styles.flowSummaryRow}>
+          <span className={styles.flowSummaryLabel}>Libraries</span>
+          <span className={styles.flowTags}>
+            <span className={styles.flowTag}>Movies</span>
+            <span className={styles.flowTag}>Shows</span>
+            <span className={styles.flowTag}>Anime</span>
+          </span>
+        </div>
+        <div className={styles.flowSummaryRow}>
+          <span className={styles.flowSummaryLabel}>Access until</span>
+          <span className={styles.flowSummaryValue}>Oct 17, 2026</span>
+        </div>
+      </div>
+      <div className={styles.flowCtaRow}>
+        <div className={styles.flowGhostBtn} style={{ borderRadius: btnRadius }}>Decline</div>
+        <div className={styles.flowPrimaryBtn} style={{ background: form.accentColor, borderRadius: btnRadius }}>
+          Accept invite →
+        </div>
+      </div>
+    </>
+  );
+}
+
+function RulesPreview({ form, btnRadius }: { form: AppearanceState; btnRadius: string }) {
+  const rules = ['One account per person', 'Up to 4 concurrent streams', 'Your email stays private'];
+  return (
+    <>
+      <div className={styles.flowKicker}>Step 02 · House rules</div>
+      <div className={styles.flowTitle}>A few things first.</div>
+      <div className={styles.flowSubtitle}>Tap each to acknowledge.</div>
+      <div className={styles.flowRules}>
+        {rules.map((r, i) => (
+          <div key={i} className={styles.flowRule}>
+            <span className={styles.flowRuleCheck} />
+            <span>{r}</span>
+          </div>
+        ))}
+      </div>
+      <div className={styles.flowCtaRow}>
+        <div className={styles.flowGhostBtn} style={{ borderRadius: btnRadius }}>Back</div>
+        <div className={styles.flowPrimaryBtn} style={{ background: form.accentColor, borderRadius: btnRadius }}>
+          Accept &amp; continue →
+        </div>
+      </div>
+    </>
+  );
+}
+
+function DetailsPreview({ form, btnRadius }: { form: AppearanceState; btnRadius: string }) {
+  return (
+    <>
+      <div className={styles.flowKicker}>Step 03 · Your details</div>
+      <div className={styles.flowTitle}>Who are you?</div>
+      <div className={styles.flowSubtitle}>Username becomes your login.</div>
+      <div className={styles.flowFieldGrid}>
+        <div className={styles.flowField}>
+          <span className={styles.flowFieldLabel}>Email</span>
+          <div className={styles.flowFieldBox}>
+            <span className={styles.flowFieldPlaceholder}>you@example.com</span>
+          </div>
+        </div>
+        <div className={styles.flowField}>
+          <span className={styles.flowFieldLabel}>Username</span>
+          <div className={styles.flowFieldBox}>
+            <span className={styles.flowFieldPlaceholder}>jonas</span>
+          </div>
+        </div>
+      </div>
+      <div className={styles.flowCtaRow}>
+        <div className={styles.flowGhostBtn} style={{ borderRadius: btnRadius }}>Back</div>
+        <div className={styles.flowPrimaryBtn} style={{ background: form.accentColor, borderRadius: btnRadius }}>
+          Continue →
+        </div>
+      </div>
+    </>
+  );
+}
+
+function WelcomePreview({ form }: { form: AppearanceState }) {
+  return (
+    <>
+      <Emblem small />
+      <div className={styles.flowKicker}>Account created</div>
+      <div className={styles.flowTitle}>{form.welcomeTitle || 'Welcome aboard'}</div>
+      <div className={styles.flowSubtitle}>{form.subtitleText}</div>
+      <div className={styles.flowChips}>
+        <span className={styles.flowChip}>
+          <span className={styles.flowChipDot} /> Server online
+        </span>
+        <span className={`${styles.flowChip} ${styles.flowChipGhost}`}>4K · HDR · Atmos</span>
+      </div>
+    </>
+  );
+}
+
+function ReadyPreview({ form, btnRadius }: { form: AppearanceState; btnRadius: string }) {
+  return (
+    <>
+      <div className={styles.flowSpark}>✦</div>
+      <div className={styles.flowTitle}>You&apos;re all set.</div>
+      <div className={styles.flowSubtitle}>Step through the portal and start watching.</div>
+      <div className={styles.flowPrimaryBtn} style={{ background: form.accentColor, borderRadius: btnRadius, marginTop: 6 }}>
+        {form.buttonText || 'Start watching'} →
+      </div>
+    </>
   );
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button, Input } from '@/components';
+import FlowBackground from '@/components/FlowBackground';
 import { useAppearance } from '@/hooks/useAppearance';
 import styles from './page.module.css';
 
@@ -67,10 +68,9 @@ export default function Home() {
     handleVerifyRef.current(c);
   }, []);
 
-  const bgStyle: React.CSSProperties = {};
-  if (appearance?.backgroundStyle === 'image' && appearance.backgroundImageUrl) {
-    bgStyle.backgroundImage = `url(${appearance.backgroundImageUrl})`;
-  }
+  const particleActive =
+    appearance?.onboardingParticleStyle &&
+    appearance.onboardingParticleStyle !== 'none';
 
   return (
     <div
@@ -79,19 +79,35 @@ export default function Home() {
       data-card-width={appearance?.cardWidth || 'default'}
       data-button-style={appearance?.buttonStyle || 'rounded'}
       data-input-style={appearance?.inputStyle || 'outlined'}
+      data-flow-layout={appearance?.onboardingLayout || 'centered'}
+      data-flow-glass={appearance?.onboardingGlass ? 'on' : 'off'}
+      data-flow-transition={appearance?.onboardingTransition || 'glide'}
+      data-flow-particles={particleActive ? 'on' : 'off'}
     >
-      <div
-        className={styles.background}
-        data-bg-style={appearance?.backgroundStyle || 'gradient'}
-        data-gradient-dir={appearance?.gradientDirection || 'top'}
-        data-noise={appearance?.enableNoise !== false ? 'on' : 'off'}
-        style={{
-          ...(appearance?.backgroundStyle === 'image' && appearance.backgroundImageUrl
-            ? { backgroundImage: `url(${appearance.backgroundImageUrl})` }
-            : {}),
-          ...({ '--bg-overlay-opacity': appearance?.backgroundOverlay ?? 0.7 } as React.CSSProperties),
-        }}
-      />
+      {particleActive ? (
+        <FlowBackground
+          visuals={{
+            onboardingParticleStyle: appearance?.onboardingParticleStyle,
+            onboardingParticleIntensity: appearance?.onboardingParticleIntensity,
+            onboardingParticleCursor: appearance?.onboardingParticleCursor,
+          }}
+          accent={appearance?.accentColor || '#A78BFA'}
+          noise={appearance?.enableNoise !== false}
+        />
+      ) : (
+        <div
+          className={styles.background}
+          data-bg-style={appearance?.backgroundStyle || 'gradient'}
+          data-gradient-dir={appearance?.gradientDirection || 'top'}
+          data-noise={appearance?.enableNoise !== false ? 'on' : 'off'}
+          style={{
+            ...(appearance?.backgroundStyle === 'image' && appearance.backgroundImageUrl
+              ? { backgroundImage: `url(${appearance.backgroundImageUrl})` }
+              : {}),
+            ...({ '--bg-overlay-opacity': appearance?.backgroundOverlay ?? 0.7 } as React.CSSProperties),
+          }}
+        />
+      )}
 
       <div className={styles.content}>
         <div className={styles.logo}>

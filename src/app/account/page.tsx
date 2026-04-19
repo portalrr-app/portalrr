@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button, Input, Card } from '@/components';
+import FlowBackground from '@/components/FlowBackground';
+import { useAppearance } from '@/hooks/useAppearance';
 import styles from './page.module.css';
 
 interface ServerInfo {
@@ -34,6 +36,7 @@ interface ReferralInvite {
 }
 
 export default function AccountPage() {
+  const { appearance } = useAppearance();
   const [user, setUser] = useState<UserAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [showLogin, setShowLogin] = useState(false);
@@ -272,8 +275,24 @@ export default function AccountPage() {
 
   if (showLogin) {
     return (
-      <div className={styles.container}>
-        <div className={styles.background} />
+      <div
+        className={styles.container}
+        data-flow-particles={appearance?.onboardingParticleStyle && appearance.onboardingParticleStyle !== 'none' ? 'on' : 'off'}
+        data-flow-glass={appearance?.onboardingGlass ? 'on' : 'off'}
+      >
+        {appearance?.onboardingParticleStyle && appearance.onboardingParticleStyle !== 'none' ? (
+          <FlowBackground
+            visuals={{
+              onboardingParticleStyle: appearance?.onboardingParticleStyle,
+              onboardingParticleIntensity: appearance?.onboardingParticleIntensity,
+              onboardingParticleCursor: appearance?.onboardingParticleCursor,
+            }}
+            accent={appearance?.accentColor || '#A78BFA'}
+            noise={appearance?.enableNoise !== false}
+          />
+        ) : (
+          <div className={styles.background} />
+        )}
         <div className={styles.content}>
           <div className={styles.header}>
             <div className={styles.logoIcon}>
@@ -322,8 +341,24 @@ export default function AccountPage() {
 
   if (user?.emailRequired) {
     return (
-      <div className={styles.container}>
-        <div className={styles.background} />
+      <div
+        className={styles.container}
+        data-flow-particles={appearance?.onboardingParticleStyle && appearance.onboardingParticleStyle !== 'none' ? 'on' : 'off'}
+        data-flow-glass={appearance?.onboardingGlass ? 'on' : 'off'}
+      >
+        {appearance?.onboardingParticleStyle && appearance.onboardingParticleStyle !== 'none' ? (
+          <FlowBackground
+            visuals={{
+              onboardingParticleStyle: appearance?.onboardingParticleStyle,
+              onboardingParticleIntensity: appearance?.onboardingParticleIntensity,
+              onboardingParticleCursor: appearance?.onboardingParticleCursor,
+            }}
+            accent={appearance?.accentColor || '#A78BFA'}
+            noise={appearance?.enableNoise !== false}
+          />
+        ) : (
+          <div className={styles.background} />
+        )}
         <div className={styles.content}>
           <div className={styles.header}>
             <div className={styles.logoIcon}>

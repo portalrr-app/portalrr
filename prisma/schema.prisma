@@ -205,6 +205,14 @@ model Settings {
   onboardingButtonText String @default("Start Watching")
   onboardingButtonUrl  String @default("/")
 
+  // Onboarding visuals — animated stage tweaks
+  onboardingParticleStyle     String  @default("constellation")  // none, constellation, starfield, orbs, portals, grid
+  onboardingParticleIntensity Float   @default(1.0)              // 0.2–1.8
+  onboardingParticleCursor    Boolean @default(true)
+  onboardingLayout            String  @default("centered")       // centered, split, immersive
+  onboardingTransition        String  @default("glide")          // glide, fade, warp
+  onboardingGlass             Boolean @default(false)
+
   // Password validation rules (customizable)
   passwordMinLength       Int     @default(8)
   passwordRequireUppercase Boolean @default(false)

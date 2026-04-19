@@ -366,7 +366,7 @@ export default function InvitesPage() {
           invites.map((invite) => (
             <div key={invite.id} className={styles.tableRow}>
               <div data-label="Code">
-                <span className={styles.code}>{invite.code}</span>
+                <span className={styles.code} title={invite.code}>{invite.code}</span>
                 {invite.label && <span className={styles.label} style={{ marginLeft: 8, fontSize: '0.85em', opacity: 0.7 }}>{invite.label}</span>}
               </div>
               <div data-label="Server" className={styles.serverType}>
