@@ -154,10 +154,7 @@ export default function OnboardingPage() {
       <header className={styles.topbar}>
         <div className={styles.brand}>
           <div className={styles.brandMark}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <ellipse cx="12" cy="12" rx="4" ry="9" />
-              <ellipse cx="12" cy="12" rx="9" ry="4" />
-            </svg>
+            <PortalrrMark />
           </div>
           <div className={styles.brandText}>
             <div className={styles.brandName}>{appearance?.appName || 'Portalrr'}</div>
@@ -192,7 +189,14 @@ export default function OnboardingPage() {
           key={stepIdx}
           data-dir={dir}
         >
-          {current.key === 'welcome' && <StepWelcome settings={settings} appName={appearance?.appName || 'Portalrr'} />}
+          {current.key === 'welcome' && (
+            <StepWelcome
+              settings={settings}
+              appName={appearance?.appName || 'Portalrr'}
+              onContinue={steps.length > 1 ? () => go(1) : handleComplete}
+              continueLabel={steps.length > 1 ? 'Continue' : settings.onboardingButtonText}
+            />
+          )}
           {current.key === 'apps' && <StepApps apps={appsBlocks} onBack={() => go(-1)} onContinue={() => go(1)} />}
           {current.key === 'guides' && <StepGuides blocks={guideBlocks} onBack={() => go(-1)} onContinue={() => go(1)} />}
           {current.key === 'ready' && (
@@ -211,18 +215,24 @@ export default function OnboardingPage() {
   );
 }
 
-function StepWelcome({ settings, appName }: { settings: Settings; appName: string }) {
+function StepWelcome({
+  settings,
+  appName,
+  onContinue,
+  continueLabel,
+}: {
+  settings: Settings;
+  appName: string;
+  onContinue: () => void;
+  continueLabel: string;
+}) {
   return (
     <div className={styles.paneCenter}>
       <div className={styles.emblem} aria-hidden="true">
         <span className={styles.emblemRing} />
         <span className={`${styles.emblemRing} ${styles.emblemRing2}`} />
         <div className={styles.emblemCore}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-            <ellipse cx="12" cy="12" rx="4" ry="9" />
-            <ellipse cx="12" cy="12" rx="9" ry="4" />
-            <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-          </svg>
+          <PortalrrMark />
         </div>
       </div>
       <div className={styles.kicker}>Account created</div>
@@ -234,6 +244,11 @@ function StepWelcome({ settings, appName }: { settings: Settings; appName: strin
         </span>
         <span className={`${styles.chip} ${styles.chipGhost}`}>4K · HDR · Atmos</span>
         <span className={`${styles.chip} ${styles.chipGhost}`}>{appName}</span>
+      </div>
+      <div className={styles.ctaRow}>
+        <button type="button" className={styles.ctaPrimary} onClick={onContinue} autoFocus>
+          {continueLabel} <IconArrow />
+        </button>
       </div>
     </div>
   );
@@ -460,6 +475,16 @@ function StepReady({
         </button>
       </div>
     </div>
+  );
+}
+
+function PortalrrMark() {
+  return (
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="4" style={{ fill: 'var(--accent)' }} />
+      <rect x="7" y="7" width="10" height="10" rx="2.5" style={{ fill: '#0A0A0A' }} />
+      <rect x="9.5" y="9.5" width="5" height="5" rx="1.5" style={{ fill: 'var(--accent)' }} />
+    </svg>
   );
 }
 

@@ -42,14 +42,13 @@
 }
 .brand { display: flex; align-items: center; gap: 12px; }
 .brandMark {
-  width: 36px; height: 36px;
+  width: 34px; height: 34px;
   display: grid; place-items: center;
-  border-radius: var(--radius-md);
-  background: var(--accent-muted);
-  border: 1px solid var(--accent-glow);
-  color: var(--accent);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06) inset, 0 6px 18px var(--accent-glow);
 }
-.brandMark svg { width: 20px; height: 20px; }
+.brandMark svg { width: 100%; height: 100%; display: block; }
 .brandName { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; font-size: 14px; }
 .brandSub { font-size: 11px; color: var(--text-secondary); }
 
@@ -186,7 +185,8 @@
 }
 .emblemRing {
   position: absolute; inset: 0;
-  border: 1px solid var(--accent); border-radius: 50%;
+  border: 1px solid var(--accent);
+  border-radius: 28px;
   opacity: 0.5; will-change: transform, opacity;
 }
 .app[data-animations="on"] .emblemRing { animation: ringPulse 3.2s ease-out infinite; }
@@ -196,13 +196,17 @@
   100% { transform: scale(1.5); opacity: 0; }
 }
 .emblemCore {
-  position: relative; width: 68px; height: 68px;
-  display: grid; place-items: center; border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, var(--accent), color-mix(in oklab, var(--accent) 40%, #000));
-  color: var(--accent-contrast);
-  box-shadow: 0 0 40px var(--accent-glow);
+  position: relative; width: 72px; height: 72px;
+  display: grid; place-items: center;
+  border-radius: 18px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06) inset, 0 0 40px var(--accent-glow);
 }
-.emblemCore svg { width: 32px; height: 32px; }
+.emblemCore svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 18px;
+}
 
 /* Typography */
 .kicker {

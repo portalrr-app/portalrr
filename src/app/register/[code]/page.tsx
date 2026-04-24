@@ -182,7 +182,19 @@ export default function RegisterPage() {
       if (res.ok) {
         router.push('/onboarding');
       } else {
-        setError(data.message || 'Registration failed');
+        // Surface field-level Zod errors so users can see exactly what's wrong
+        // ("Validation failed" on its own is unactionable).
+        if (Array.isArray(data.errors) && data.errors.length > 0) {
+          const detail = data.errors
+            .map((e: { field?: string; message?: string }) =>
+              e.field ? `${e.field}: ${e.message}` : e.message,
+            )
+            .filter(Boolean)
+            .join(' · ');
+          setError(detail || data.message || 'Registration failed');
+        } else {
+          setError(data.message || 'Registration failed');
+        }
       }
     } catch {
       setError('Something went wrong. Please try again.');
@@ -231,10 +243,7 @@ export default function RegisterPage() {
       <header className={styles.topbar}>
         <Link href="/" className={styles.brand}>
           <div className={styles.brandMark}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <ellipse cx="12" cy="12" rx="4" ry="9" />
-              <ellipse cx="12" cy="12" rx="9" ry="4" />
-            </svg>
+            <PortalrrMark />
           </div>
           <div className={styles.brandText}>
             <div className={styles.brandName}>{appearance?.appName || 'Portalrr'}</div>
@@ -340,11 +349,7 @@ function StepInvite({
         <span className={styles.emblemRing} />
         <span className={`${styles.emblemRing} ${styles.emblemRing2}`} />
         <div className={styles.emblemCore}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-            <ellipse cx="12" cy="12" rx="4" ry="9" />
-            <ellipse cx="12" cy="12" rx="9" ry="4" />
-            <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-          </svg>
+          <PortalrrMark />
         </div>
       </div>
       <div className={styles.kicker}>You&apos;ve been invited</div>
@@ -718,6 +723,16 @@ function IconArrow() {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <line x1="5" y1="12" x2="19" y2="12" />
       <polyline points="12 5 19 12 12 19" />
+    </svg>
+  );
+}
+
+function PortalrrMark() {
+  return (
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="4" style={{ fill: 'var(--accent)' }} />
+      <rect x="7" y="7" width="10" height="10" rx="2.5" style={{ fill: '#0A0A0A' }} />
+      <rect x="9.5" y="9.5" width="5" height="5" rx="1.5" style={{ fill: 'var(--accent)' }} />
     </svg>
   );
 }
