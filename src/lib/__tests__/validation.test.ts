@@ -85,6 +85,14 @@ describe('registerSchema', () => {
   it('rejects username over 20 chars', () => {
     expect(registerSchema.safeParse({ ...valid, username: 'a'.repeat(21) }).success).toBe(false);
   });
+
+  it('accepts 32-hex-char codes from generateInviteCode()', () => {
+    // Regression: crypto.generateInviteCode() produces randomBytes(16).toString('hex')
+    // which is always 32 chars. The registerSchema code.max must be >= 32.
+    const code = 'f137a2dd21bbc1b99aa5c0f6bf02a805';
+    expect(code.length).toBe(32);
+    expect(registerSchema.safeParse({ ...valid, code }).success).toBe(true);
+  });
 });
 
 describe('createInviteSchema', () => {

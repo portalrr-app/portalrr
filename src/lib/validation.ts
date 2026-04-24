@@ -36,7 +36,9 @@ export const setupSchema = z.object({
 });
 
 export const registerSchema = z.object({
-  code: z.string().min(1).max(20).trim(),
+  // generateInviteCode() produces 32-hex-char codes; custom codes can be up to
+  // 20 chars. 64 is a safe ceiling that accepts both without overpromising.
+  code: z.string().min(1).max(64).trim(),
   email: z.string().email().max(255).trim(),
   username: z
     .string()
