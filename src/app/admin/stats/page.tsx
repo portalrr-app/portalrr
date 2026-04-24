@@ -132,10 +132,10 @@ export default function StatsPage() {
 
   return (
     <div>
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.title}>Stats</h1>
-          <p className={styles.subtitle}>Server statistics and active streams</p>
+      <div className="adm-page-head">
+        <div>
+          <h1>Stats</h1>
+          <div className="adm-sub">Server statistics and active streams.</div>
         </div>
         <select
           className={styles.serverSelect}

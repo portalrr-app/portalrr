@@ -72,6 +72,16 @@ export default function UsersPage() {
   const [libraries, setLibraries] = useState<Library[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>('all');
+  const [search, setSearch] = useState('');
+
+  // Hydrate the filter from the ?q= URL param (used by the top-bar search).
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const q = new URL(window.location.href).searchParams.get('q') || '';
+    setSearch(q);
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [accessInput, setAccessInput] = useState('0');
@@ -537,12 +547,32 @@ export default function UsersPage() {
     return new Date(user.accessUntil) < new Date() ? 'expired' : 'active';
   };
 
+  const visibleUsers = (() => {
+    if (!search) return users;
+    const q = search.toLowerCase();
+    return users.filter((u) =>
+      u.username.toLowerCase().includes(q) ||
+      (u.email || '').toLowerCase().includes(q) ||
+      (u.serverName || '').toLowerCase().includes(q) ||
+      (u.notes || '').toLowerCase().includes(q),
+    );
+  })();
+
   return (
     <div>
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.title}>Users</h1>
-          <p className={styles.subtitle}>Manage users from your media servers</p>
+      <div className="adm-page-head">
+        <div>
+          <h1>
+            Users
+            {users.length > 0 && (
+              <span style={{ color: 'var(--text-tertiary)', fontSize: 18, fontWeight: 500, fontFamily: 'var(--font-body)', marginLeft: 10 }}>
+                {users.length}
+              </span>
+            )}
+          </h1>
+          <div className="adm-sub">
+            Everyone with access to your media servers.
+          </div>
         </div>
       </div>
 
@@ -597,15 +627,19 @@ export default function UsersPage() {
           <div className={styles.emptyState}>
             <p>Loading...</p>
           </div>
-        ) : users.length === 0 ? (
+        ) : visibleUsers.length === 0 ? (
           <div className={styles.emptyState}>
-            <p className={styles.emptyStateTitle}>No users found</p>
+            <p className={styles.emptyStateTitle}>
+              {users.length === 0 ? 'No users found' : 'No matches'}
+            </p>
             <p className={styles.emptyStateText}>
-              Users from your media servers will appear here
+              {users.length === 0
+                ? 'Users from your media servers will appear here'
+                : `Nothing matched "${search}". Try a different query or filter.`}
             </p>
           </div>
         ) : (
-          users.map((user) => (
+          visibleUsers.map((user) => (
             <div key={`${user.source}-${user.id}`} className={styles.tableRow}>
               <div data-label="Select">
                 <input

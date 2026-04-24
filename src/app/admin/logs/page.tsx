@@ -111,6 +111,14 @@ export default function LogsPage() {
 
   const [eventFilter, setEventFilter] = useState('all');
   const [actorSearch, setActorSearch] = useState('');
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const q = new URL(window.location.href).searchParams.get('q') || '';
+    if (q) setActorSearch(q);
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
@@ -256,14 +264,16 @@ export default function LogsPage() {
   return (
     <div>
       {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.title}>Audit Log</h1>
-          <p className={styles.subtitle}>Security events, sessions, and system activity</p>
+      <div className="adm-page-head">
+        <div>
+          <h1>Audit log</h1>
+          <div className="adm-sub">
+            Every action taken on your portal. Security events, sessions, and system activity.
+            {activeTab === 'audit' && !loadingAudit && totalEntries > 0 && (
+              <> · <b style={{ color: 'var(--text-primary)' }}>{totalEntries.toLocaleString()} entries</b></>
+            )}
+          </div>
         </div>
-        {activeTab === 'audit' && !loadingAudit && totalEntries > 0 && (
-          <span className={styles.count}>{totalEntries} total entries</span>
-        )}
       </div>
 
       {/* Section tabs */}

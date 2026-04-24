@@ -159,9 +159,11 @@ export default function MyAccountPage() {
 
   return (
     <div>
-      <div className={styles.header}>
-        <h1 className={styles.title}>My Account</h1>
-        <p className={styles.subtitle}>Manage your admin account settings</p>
+      <div className="adm-page-head">
+        <div>
+          <h1>My account</h1>
+          <div className="adm-sub">Manage your admin profile, password, and two-factor authentication.</div>
+        </div>
       </div>
 
       <div className={styles.sections}>

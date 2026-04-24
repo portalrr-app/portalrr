@@ -515,10 +515,12 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.title}>Settings</h1>
-          <p className={styles.subtitle}>Configure your server connections and preferences</p>
+      <div className="adm-page-head">
+        <div>
+          <h1>Settings</h1>
+          <div className="adm-sub">
+            Servers, integrations, and platform config.
+          </div>
         </div>
       </div>
 

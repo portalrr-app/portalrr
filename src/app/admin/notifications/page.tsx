@@ -356,12 +356,10 @@ export default function NotificationsPage() {
 
   return (
     <>
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.title}>Notifications</h1>
-          <p className={styles.subtitle}>
-            Manage webhooks, email templates, and announcements
-          </p>
+      <div className="adm-page-head">
+        <div>
+          <h1>Notifications</h1>
+          <div className="adm-sub">Manage webhooks, email templates, and announcements.</div>
         </div>
       </div>
 

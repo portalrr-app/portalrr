@@ -1,0 +1,194 @@
+/*
+ * Portalrr admin design system — shared primitives used across all /admin pages.
+ * Imported once in admin/layout.tsx so every page inherits the same visual language.
+ *
+ * Classes here are intentionally global (unprefixed) so existing pages that use
+ * <button className="btn">, <span className="status ok">, etc. just work.
+ */
+
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+.adm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border-radius: 9px;
+  font-weight: 500;
+  font-size: 13px;
+  font-family: inherit;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  transition: background var(--transition-base), border-color var(--transition-base), filter var(--transition-base), transform var(--transition-base);
+  cursor: pointer;
+  text-decoration: none;
+}
+.adm-btn:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-active);
+}
+.adm-btn svg { width: 15px; height: 15px; }
+
+.adm-btn-primary {
+  background: linear-gradient(180deg, var(--accent-hover), var(--accent));
+  color: #120A28;
+  border-color: transparent;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 8px 20px var(--accent-glow);
+}
+.adm-btn-primary:hover {
+  filter: brightness(1.05);
+  border-color: transparent;
+}
+.adm-btn-danger {
+  color: var(--error);
+  border-color: rgba(248, 113, 113, 0.3);
+}
+.adm-btn-danger:hover { background: rgba(248, 113, 113, 0.08); }
+.adm-btn-sm {
+  padding: 6px 11px;
+  font-size: 12px;
+  border-radius: 7px;
+}
+
+/* ── Card primitives ────────────────────────────────────────────────── */
+.adm-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.adm-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.adm-card-head h3,
+.adm-card-head .adm-card-title {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+}
+.adm-card-head .adm-pill {
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  letter-spacing: 0.02em;
+}
+.adm-card-head .adm-link {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  transition: color var(--transition-base);
+  cursor: pointer;
+  text-decoration: none;
+}
+.adm-card-head .adm-link:hover { color: var(--accent); }
+.adm-card-body { padding: 18px; }
+.adm-card-body.adm-tight { padding: 0; }
+
+/* ── Status pill ─────────────────────────────────────────────────────── */
+.adm-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+}
+.adm-status .adm-d {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+}
+.adm-status.ok {
+  background: rgba(52, 211, 153, 0.10);
+  color: var(--success);
+}
+.adm-status.ok .adm-d {
+  background: var(--success);
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2);
+}
+.adm-status.warn {
+  background: rgba(251, 191, 36, 0.10);
+  color: var(--warning);
+}
+.adm-status.warn .adm-d {
+  background: var(--warning);
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2);
+}
+.adm-status.err {
+  background: rgba(248, 113, 113, 0.10);
+  color: var(--error);
+}
+.adm-status.err .adm-d {
+  background: var(--error);
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.2);
+}
+.adm-status.info {
+  background: rgba(96, 165, 250, 0.10);
+  color: #60A5FA;
+}
+.adm-status.info .adm-d {
+  background: #60A5FA;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+}
+
+/* ── Code chip ───────────────────────────────────────────────────────── */
+.adm-code {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 12px;
+  background: var(--bg-base);
+  padding: 2px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Page head ───────────────────────────────────────────────────────── */
+.adm-page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.adm-page-head h1 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+.adm-page-head .adm-sub {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+.adm-page-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}

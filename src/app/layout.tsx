@@ -21,8 +21,14 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Browsers strip the nonce attribute from the DOM after CSP validates the
+            inline script, so the client sees an empty nonce during hydration while
+            the server sent the real value. suppressHydrationWarning silences the
+            expected mismatch — the script still runs because CSP verifies it at
+            parse time, before React hydrates. */}
         <script
           nonce={nonce}
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `
               (function() {

@@ -1,8 +1,10 @@
 .header {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  margin-bottom: 24px;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .headerLeft {
@@ -12,14 +14,18 @@
 }
 
 .title {
-  font-size: 24px;
+  font-family: var(--font-display);
+  font-size: 28px;
   font-weight: 600;
   color: var(--text-primary);
+  letter-spacing: -0.02em;
 }
 
 .subtitle {
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--text-secondary);
+  margin-top: 4px;
+  line-height: 1.5;
 }
 
 .grid {
